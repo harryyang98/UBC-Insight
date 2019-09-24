@@ -133,10 +133,10 @@ export default class InsightFacade implements IInsightFacade {
                 resolve(results);
             } catch (ex) {
                 if (ex instanceof InsightError) {
-                    return reject(ex);
+                    reject(ex);
                 }
 
-                return reject(new InsightError("JSON format error"));
+                reject(new InsightError("JSON format error"));
             }
         });
     }
@@ -193,7 +193,15 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         const mapping: any = { };
-        mapping["IS"] = ["string", (a: any, b: any) => a === b];
+        mapping["IS"] = ["string", (a: any, regex: any) => {
+            if (!regex.includes("*")) {
+                return a === regex;
+            }
+            if (!/^\*?[^\*]*\*?$/.test(regex)) {
+                throw new InsightError("Invalid regex filter value");
+            }
+            return new RegExp("^" + regex.split("*").join(".*") + "$").test(a);
+        }];
         mapping["EQ"] = ["number", (a: any, b: any) => a === b];
         mapping["LT"] = ["number", (a: any, b: any) => a < b];
         mapping["GT"] = ["number", (a: any, b: any) => a > b];
