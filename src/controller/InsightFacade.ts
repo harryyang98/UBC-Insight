@@ -125,20 +125,7 @@ export default class InsightFacade implements IInsightFacade {
                 if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
                     reject(new InsightError("Value of ORDER not exists in COLUMNS"));
                 }
-                results.sort((a, b) => {
-                    if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
-                        const order: string = query["OPTIONS"]["ORDER"];
-                        if (InsightFacade.toComp(a[order]) !== InsightFacade.toComp(b[order])) {
-                            return InsightFacade.toComp(a[order]) < InsightFacade.toComp(b[order]) ? -1 : 1;
-                        }
-                    }
-                    for (const key of Object.keys(query["OPTIONS"]["COLUMNS"])) {
-                        if (InsightFacade.toComp(a[key]) !== InsightFacade.toComp(b[key])) {
-                            return InsightFacade.toComp(a[key]) < InsightFacade.toComp(b[key]) ? -1 : 1;
-                        }
-                    }
-                    return 0;
-                });
+                results.sort((a, b) => InsightFacade.sortResults(a, b, query["OPTIONS"]));
 
                 if (results.length > 5000) {
                     reject(new ResultTooLargeError());
@@ -223,6 +210,21 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         throw new InsightError("Invalid comparator");
+    }
+
+    private static sortResults(a: any, b: any, options: any): number {
+        if (Object.keys(options).includes("ORDER")) {
+            const order: string = options["ORDER"];
+            if (InsightFacade.toComp(a[order]) !== InsightFacade.toComp(b[order])) {
+                return InsightFacade.toComp(a[order]) < InsightFacade.toComp(b[order]) ? -1 : 1;
+            }
+        }
+        for (const key of Object.keys(options["COLUMNS"])) {
+            if (InsightFacade.toComp(a[key]) !== InsightFacade.toComp(b[key])) {
+                return InsightFacade.toComp(a[key]) < InsightFacade.toComp(b[key]) ? -1 : 1;
+            }
+        }
+        return 0;
     }
 
     private static toComp(obj: any): string | number {
