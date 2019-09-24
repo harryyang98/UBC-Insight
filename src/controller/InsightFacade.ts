@@ -1,5 +1,5 @@
 import Log from "../Util";
-import {IInsightFacade, InsightDataset, InsightDatasetKind} from "./IInsightFacade";
+import {IInsightFacade, InsightDataset, InsightDatasetKind, ResultTooLargeError} from "./IInsightFacade";
 import {InsightError, NotFoundError} from "./IInsightFacade";
 import * as JSZip from "jszip";
 
@@ -97,6 +97,10 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public performQuery(query: any): Promise <any[]> {
+        if (Object.keys(query).length !== 2) {
+            return Promise.reject(new InsightError("JSON has more keys than excepted"));
+        }
+
         const self = this;
         return new Promise<any>((resolve, reject) => {
             try {
@@ -107,30 +111,39 @@ export default class InsightFacade implements IInsightFacade {
                 const courseSet = self.findCourses(query["WHERE"], id);
 
                 // select specific columns and add to results
-                const results: any[] = [];
+                const results: any[] = new Array(0);
                 const columns: string[] = query["OPTIONS"]["COLUMNS"];
                 for (const course of courseSet) {
                     const result: any = { };
-
                     for (const column of columns) {
                         result[column] = self.datasets[id][course][column.split("_")[1]];
                     }
-
                     results.push(result);
                 }
 
                 // order the columns
-                if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
-                    const order: string = query["OPTIONS"]["ORDER"];
-                    results.sort((a, b) => {
-                        if (a[order] === b[order]) {
-                            return 0;
-                        }
-                        return a[order] < b[order] ? -1 : 1;
-                    });
+                if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
+                    reject(new InsightError("Value of ORDER not exists in COLUMNS"));
                 }
+                results.sort((a, b) => {
+                    if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
+                        const order: string = query["OPTIONS"]["ORDER"];
+                        if (InsightFacade.toComp(a[order]) !== InsightFacade.toComp(b[order])) {
+                            return InsightFacade.toComp(a[order]) < InsightFacade.toComp(b[order]) ? -1 : 1;
+                        }
+                    }
+                    for (const key of Object.keys(query["OPTIONS"]["COLUMNS"])) {
+                        if (InsightFacade.toComp(a[key]) !== InsightFacade.toComp(b[key])) {
+                            return InsightFacade.toComp(a[key]) < InsightFacade.toComp(b[key]) ? -1 : 1;
+                        }
+                    }
+                    return 0;
+                });
 
-                resolve({result: results});
+                if (results.length > 5000) {
+                    reject(new ResultTooLargeError());
+                }
+                resolve(results);
             } catch (ex) {
                 if (ex instanceof InsightError) {
                     return reject(ex);
@@ -169,6 +182,9 @@ export default class InsightFacade implements IInsightFacade {
             }
 
             // filter courses
+            if (Object.keys(filterContent).length !== 1) {
+                throw new InsightError("Filter content should have one and only one key");
+            }
             const contentKey = Object.keys(filterContent)[0];
             const contentValue = filterContent[contentKey];
             const datasetKey = contentKey.split("_")[1];
@@ -185,6 +201,10 @@ export default class InsightFacade implements IInsightFacade {
         value: any,
         comparator: string
     ): Set<number> {
+        if (!Object.keys(dataset[0]).includes(key)) {
+            throw new InsightError("Invalid key in filter content");
+        }
+
         const mapping: any = { };
         mapping["IS"] = ["string", (a: any, b: any) => a === b];
         mapping["EQ"] = ["number", (a: any, b: any) => a === b];
@@ -203,6 +223,15 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         throw new InsightError("Invalid comparator");
+    }
+
+    private static toComp(obj: any): string | number {
+        if (typeof obj === "string") {
+            if (obj.length > 0) {
+                return -obj.charCodeAt(0);
+            }
+        }
+        return obj;
     }
 
     private static union(sets: Array<Set<number>>): Set<number> {
