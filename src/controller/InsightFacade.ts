@@ -2,6 +2,7 @@ import Log from "../Util";
 import {IInsightFacade, InsightDataset, InsightDatasetKind, ResultTooLargeError} from "./IInsightFacade";
 import {InsightError, NotFoundError} from "./IInsightFacade";
 import * as JSZip from "jszip";
+import {SetUtils} from "../SetUtils";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -43,6 +44,7 @@ export default class InsightFacade implements IInsightFacade {
                                 course["instructor"] = result["Professor"];
                                 course["title"] = result["Title"];
                                 course["pass"] = result["Pass"];
+                                course["fail"] = result["Fail"];
                                 course["audit"] = result["Audit"];
                                 course["uuid"] = result["id"];
                                 course["year"] = result["Year"];
@@ -113,19 +115,30 @@ export default class InsightFacade implements IInsightFacade {
                 // select specific columns and add to results
                 const results: any[] = new Array(0);
                 const columns: string[] = query["OPTIONS"]["COLUMNS"];
+                for (const column of columns) {
+                    if (!/^[^_]+_[^_]+$/.test(column)) {
+                        reject(new InsightError("Invalid key format in columns"));
+                    }
+                }
                 for (const course of courseSet) {
                     const result: any = { };
                     for (const column of columns) {
-                        result[column] = self.datasets[id][course][column.split("_")[1]];
+                        if (Object.keys(self.datasets[id][course]).includes(column.split("_")[1])) {
+                            result[column] = self.datasets[id][course][column.split("_")[1]];
+                        } else {
+                            reject(new InsightError("Key in columns not exists in dataset: " + column));
+                        }
                     }
                     results.push(result);
                 }
 
                 // order the columns
-                if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
-                    reject(new InsightError("Value of ORDER not exists in COLUMNS"));
+                if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
+                    if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
+                        reject(new InsightError("Value of ORDER not exists in COLUMNS"));
+                    }
+                    results.sort((a, b) => InsightFacade.sortResults(a, b, query["OPTIONS"]));
                 }
-                results.sort((a, b) => InsightFacade.sortResults(a, b, query["OPTIONS"]));
 
                 if (results.length > 5000) {
                     reject(new ResultTooLargeError());
@@ -135,7 +148,6 @@ export default class InsightFacade implements IInsightFacade {
                 if (ex instanceof InsightError) {
                     reject(ex);
                 }
-
                 reject(new InsightError("JSON format error"));
             }
         });
@@ -156,16 +168,19 @@ export default class InsightFacade implements IInsightFacade {
             for (const subFilter of filter[comparator]) {
                 subSets.push(this.findCourses(subFilter, id));
             }
+            if (subSets.length === 0) {
+                throw new InsightError("AND and OR must have at least one element");
+            }
 
             if (comparator === "OR") {
-                return InsightFacade.union(subSets);
+                return SetUtils.union(subSets);
             } else if (comparator === "AND") {
-                return InsightFacade.intersecion(subSets);
+                return SetUtils.intersecion(subSets);
             }
         } else {
             const filterContent = filter[comparator];
             if (comparator === "NOT") {
-                return InsightFacade.complementary(this.findCourses(filterContent, id), allCourses);
+                return SetUtils.complementary(this.findCourses(filterContent, id), allCourses);
             }
 
             // filter courses
@@ -174,6 +189,9 @@ export default class InsightFacade implements IInsightFacade {
             }
             const contentKey = Object.keys(filterContent)[0];
             const contentValue = filterContent[contentKey];
+            if (!/^[^_]+_[^_]+$/.test(contentKey)) {
+                throw new InsightError("Invalid key format in filter content");
+            }
             const datasetKey = contentKey.split("_")[1];
             return InsightFacade.filterCourses(dataset, allCourses, datasetKey, contentValue, comparator);
         }
@@ -189,7 +207,7 @@ export default class InsightFacade implements IInsightFacade {
         comparator: string
     ): Set<number> {
         if (!Object.keys(dataset[0]).includes(key)) {
-            throw new InsightError("Invalid key in filter content");
+            throw new InsightError("Key in filter content not found in dataset");
         }
 
         const mapping: any = { };
@@ -211,7 +229,7 @@ export default class InsightFacade implements IInsightFacade {
                 throw new InsightError("Filter content type not valid");
             }
 
-            return InsightFacade.setFilter(
+            return SetUtils.setFilter(
                 allCourses,
                 (course) => mapping[comparator][1](dataset[course][key], value)
             );
@@ -243,43 +261,4 @@ export default class InsightFacade implements IInsightFacade {
         }
         return obj;
     }
-
-    private static union(sets: Array<Set<number>>): Set<number> {
-        const n = new Set<number>();
-        for (const set of sets) {
-            set.forEach((e) => n.add(e));
-        }
-        return n;
-    }
-
-    private static intersecion(sets: Array<Set<number>>): Set<number> {
-        const n = new Set<number>(sets[0]);
-        for (let i = 1; i < sets.length; i ++) {
-            for (const e of sets[0]) {
-                if (!sets[i].has(e)) {
-                    n.delete(e);
-                }
-            }
-        }
-        return n;
-    }
-
-    private static complementary(a: Set<number>, c: Set<number>): Set<number> {
-        const n = new Set<number>(c);
-        for (const e of a) {
-            n.delete(e);
-        }
-        return n;
-    }
-
-    private static setFilter(set: Set<number>, filter: ((n: number) => boolean)) {
-        const n = new Set<number>(set);
-        for (const e of set) {
-            if (!filter(e)) {
-                n.delete(e);
-            }
-        }
-        return n;
-    }
-
 }
