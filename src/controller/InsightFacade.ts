@@ -46,8 +46,8 @@ export default class InsightFacade implements IInsightFacade {
                                 course["pass"] = result["Pass"];
                                 course["fail"] = result["Fail"];
                                 course["audit"] = result["Audit"];
-                                course["uuid"] = result["id"];
-                                course["year"] = result["Year"];
+                                course["uuid"] = result["id"] + "";
+                                course["year"] = parseInt(result["Year"], 10);
 
                                 // add course to dataset
                                 dataset.push(course);
@@ -137,7 +137,7 @@ export default class InsightFacade implements IInsightFacade {
                     if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
                         reject(new InsightError("Value of ORDER not exists in COLUMNS"));
                     }
-                    results.sort((a, b) => InsightFacade.sortResults(a, b, query["OPTIONS"]));
+                    results.sort((a, b) => InsightFacade.compareResults(a, b, query["OPTIONS"]));
                 }
 
                 if (results.length > 5000) {
@@ -227,6 +227,8 @@ export default class InsightFacade implements IInsightFacade {
         if (Object.keys(mapping).includes(comparator)) {
             if (typeof value !== mapping[comparator][0]) {
                 throw new InsightError("Filter content type not valid");
+            } else if (typeof dataset[0][key] !== mapping[comparator][0]) {
+                throw new InsightError("Filter content type not match");
             }
 
             return SetUtils.setFilter(
@@ -238,27 +240,32 @@ export default class InsightFacade implements IInsightFacade {
         throw new InsightError("Invalid comparator");
     }
 
-    private static sortResults(a: any, b: any, options: any): number {
-        if (Object.keys(options).includes("ORDER")) {
-            const order: string = options["ORDER"];
-            if (InsightFacade.toComp(a[order]) !== InsightFacade.toComp(b[order])) {
-                return InsightFacade.toComp(a[order]) < InsightFacade.toComp(b[order]) ? -1 : 1;
-            }
-        }
-        for (const key of Object.keys(options["COLUMNS"])) {
-            if (InsightFacade.toComp(a[key]) !== InsightFacade.toComp(b[key])) {
-                return InsightFacade.toComp(a[key]) < InsightFacade.toComp(b[key]) ? -1 : 1;
-            }
-        }
-        return 0;
+    private static compareResults(a: any, b: any, options: any): number {
+        const order: string = options["ORDER"];
+        return InsightFacade.rule(a[order], b[order]);
+        // for (const key of Object.keys(options["COLUMNS"])) {
+        //     if (InsightFacade.toComp(a[key]) !== InsightFacade.toComp(b[key])) {
+        //         return InsightFacade.toComp(a[key]) < InsightFacade.toComp(b[key]) ? -1 : 1;
+        //     }
+        // }
     }
 
-    private static toComp(obj: any): string | number {
-        if (typeof obj === "string") {
-            if (obj.length > 0) {
-                return -obj.charCodeAt(0);
+    private static rule(a: any, b: any): number {
+        if (typeof a === "string") {
+            for (let i = 0; i < Math.min(a.length, b.length); i ++) {
+                if (a.charCodeAt(i) !== b.charCodeAt(i)) {
+                    return a.charCodeAt(i) > b.charCodeAt(i) ? 1 : -1;
+                }
             }
+            if (a.length === b.length) {
+                return 0;
+            }
+            return a.length > b.length ? 1 : -1;
         }
-        return obj;
+
+        if (a === b) {
+            return 0;
+        }
+        return a > b ? 1 : -1;
     }
 }
