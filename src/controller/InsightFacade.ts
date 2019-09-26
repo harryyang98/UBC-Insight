@@ -14,7 +14,7 @@ export default class InsightFacade implements IInsightFacade {
     private readonly datasets: {[id: string]: any[]};
 
     constructor() {
-        this.datasets = {};
+        this.datasets = { };
     }
 
     public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
@@ -38,6 +38,8 @@ export default class InsightFacade implements IInsightFacade {
                     if (zip.files[key].dir) {
                         if (zip.files[key].name !== "courses/") {
                             throw new InsightError("Zip cannot contain folders other than courses");
+                        } else if (!zip.files[key].name.includes("courses/")) {
+                            throw new InsightError("All files should be in the courses folder");
                         }
                         continue;
                     }
@@ -55,7 +57,7 @@ export default class InsightFacade implements IInsightFacade {
                                 throw new InsightError("Invalid dataset kind");
                             }
                         }
-                    }).catch((err) => reject(err)));
+                    }).catch((err) => Log.trace(err)));
                 }
 
                 Promise.all(threads).then(() => {
@@ -63,14 +65,14 @@ export default class InsightFacade implements IInsightFacade {
                         throw new InsightError("The zip must contain at least one course");
                     }
                     resolve([id]);
-                }).catch((err) => reject(new InsightError("")));
-            }).catch((err) => reject(new InsightError("")));
+                }).catch((err) => reject(new InsightError(err.message)));
+            }).catch((err) => reject(new InsightError(err.message)));
         });
     }
 
     public removeDataset(id: string): Promise<string> {
         if (!Object.keys(this.datasets).includes(id)) {
-            return Promise.reject(new InsightError("Dataset not exists"));
+            return Promise.reject(new NotFoundError("Dataset not exists"));
         }
 
         delete this.datasets[id];
@@ -113,6 +115,9 @@ export default class InsightFacade implements IInsightFacade {
             try {
                 // extract dataset id from query
                 const id: string = query["OPTIONS"]["COLUMNS"][0].split("_")[0];
+                if (!Object.keys(self.datasets).includes(id) || self.datasets[id].length <= 0) {
+                    reject(new InsightError("Dataset not exists"));
+                }
 
                 // find all the courses matching where
                 const courseSet = self.findCourses(query["WHERE"], id);
@@ -149,11 +154,8 @@ export default class InsightFacade implements IInsightFacade {
                     reject(new ResultTooLargeError());
                 }
                 resolve(results);
-            } catch (ex) {
-                if (ex instanceof InsightError) {
-                    reject(ex);
-                }
-                reject(new InsightError("JSON format error"));
+            } catch (err) {
+                reject(new InsightError(err.message));
             }
         });
     }
@@ -257,6 +259,12 @@ export default class InsightFacade implements IInsightFacade {
         course["audit"] = result["Audit"];
         course["uuid"] = result["id"] + "";
         course["year"] = parseInt(result["Year"], 10);
+
+        for (const key of Object.keys(course)) {
+            if (course[key] === undefined) {
+                throw new InsightError("File JSON Format not okay");
+            }
+        }
         return course;
     }
 
