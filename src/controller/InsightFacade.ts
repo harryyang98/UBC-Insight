@@ -70,10 +70,17 @@ export default class InsightFacade implements IInsightFacade {
 
     public removeDataset(id: string): Promise<string> {
         if (!Object.keys(this.datasets).includes(id)) {
-            return Promise.reject(new InsightError("Dataset not exists"));
+            return Promise.reject(new NotFoundError("Dataset not exists"));
+        }
+        if (id.includes("_") || id.trim().length === 0) {
+            return Promise.reject(new InsightError("Field id format not valid"));
+        }
+        try{
+            delete this.datasets[id];
+        } catch (err) {
+            return Promise.reject(new InsightError("fail to delete"));
         }
 
-        delete this.datasets[id];
         return Promise.resolve(id);
     }
 
