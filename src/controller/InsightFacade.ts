@@ -75,7 +75,11 @@ export default class InsightFacade implements IInsightFacade {
             return Promise.reject(new NotFoundError("Dataset not exists"));
         }
 
-        delete this.datasets[id];
+        try {
+            delete this.datasets[id];
+        } catch (err) {
+            return Promise.reject(err.message);
+        }
         return Promise.resolve(id);
     }
 
@@ -271,11 +275,6 @@ export default class InsightFacade implements IInsightFacade {
     private static compareResults(a: any, b: any, options: any): number {
         const order: string = options["ORDER"];
         return InsightFacade.rule(a[order], b[order]);
-        // for (const key of Object.keys(options["COLUMNS"])) {
-        //     if (InsightFacade.toComp(a[key]) !== InsightFacade.toComp(b[key])) {
-        //         return InsightFacade.toComp(a[key]) < InsightFacade.toComp(b[key]) ? -1 : 1;
-        //     }
-        // }
     }
 
     private static rule(a: any, b: any): number {
