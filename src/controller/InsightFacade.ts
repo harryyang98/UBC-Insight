@@ -18,7 +18,7 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
-        if (id.includes("_") || id.length === 0) {
+        if (id.includes("_") || id.trim().length === 0) {
             return Promise.reject(new InsightError("Field id format not valid"));
         } else if (Object.keys(this.datasets).includes(id)) {
             return Promise.reject(new InsightError("Cannot add with duplicated id"));
@@ -29,43 +29,42 @@ export default class InsightFacade implements IInsightFacade {
         return new Promise<string[]>((resolve, reject) => {
             // unzip string and read data to courseSets
             JSZip.loadAsync(content, {base64: true}).then((zip) => {
-                for (const key of Object.keys(zip.files)) {
-                    zip.files[key].async("text").then((text) => {
-                        // get result block of json object
-                        const results: [] = JSON.parse(text)["result"];
+                if (Object.keys(zip.files).length === 0) {
+                    throw new InsightError("Zip must contain one or more files");
+                }
 
-                        // for each sub json object in the result block
+                const threads: any[] = [];
+                for (const key of Object.keys(zip.files)) {
+                    if (zip.files[key].dir) {
+                        if (zip.files[key].name !== "courses/") {
+                            throw new InsightError("Zip cannot contain folders other than courses");
+                        }
+                        continue;
+                    }
+
+                    // add every results in every files
+                    threads.push(zip.files[key].async("text").then((text) => {
+                        const results: [] = JSON.parse(text)["result"];
                         for (const result of results) {
                             if (kind === InsightDatasetKind.Courses) {
-                                const course: {[key: string]: any} = {};
-                                course["dept"] = result["Subject"];
-                                course["id"] = result["Course"];
-                                course["avg"] = result["Avg"];
-                                course["instructor"] = result["Professor"];
-                                course["title"] = result["Title"];
-                                course["pass"] = result["Pass"];
-                                course["fail"] = result["Fail"];
-                                course["audit"] = result["Audit"];
-                                course["uuid"] = result["id"] + "";
-                                course["year"] = parseInt(result["Year"], 10);
-
                                 // add course to dataset
-                                dataset.push(course);
+                                dataset.push(InsightFacade.convertData(result));
                             } else if (kind === InsightDatasetKind.Rooms) {
-                                reject(new InsightError("Rooms not implemented"));
+                                throw new InsightError("Rooms not implemented");
                             } else {
-                                reject(new InsightError("Invalid dataset kind"));
+                                throw new InsightError("Invalid dataset kind");
                             }
                         }
-                    }).catch(
-                        (err) => reject(new InsightError("Failed to extract the file"))
-                    );
+                    }).catch((err) => reject(err)));
                 }
-            }).then(
-                () => resolve([id])
-            ).catch(
-                (err) => reject(new InsightError("Failed to extract the file"))
-            );
+
+                Promise.all(threads).then(() => {
+                    if (dataset.length === 0) {
+                        throw new InsightError("The zip must contain at least one course");
+                    }
+                    resolve([id]);
+                }).catch((err) => reject(err));
+            }).catch((err) => reject(err));
         });
     }
 
@@ -79,23 +78,29 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public listDatasets(): Promise<InsightDataset[]> {
-        const insightDatasets: InsightDataset[] = [];
+        const datasets = this.datasets;
+        return new Promise<InsightDataset[]>((resolve, reject) => {
+            const insightDatasets: InsightDataset[] = [];
 
-        for (const id of Object.keys(this.datasets)) {
-            // check dataset kind
-            let datasetKind = InsightDatasetKind.Rooms;
-            if (Object.keys(this.datasets[id][0]).includes("dept")) {
-                datasetKind = InsightDatasetKind.Courses;
+            for (const id of Object.keys(datasets)) {
+                // check dataset kind
+                if (datasets[id].length === 0) {
+                    continue;
+                }
+                let datasetKind = InsightDatasetKind.Rooms;
+                if (Object.keys(datasets[id][0]).includes("dept")) {
+                    datasetKind = InsightDatasetKind.Courses;
+                }
+
+                insightDatasets.push({
+                    id: id,
+                    kind: datasetKind,
+                    numRows: datasets[id].length
+                });
             }
 
-            insightDatasets.push({
-                id: id,
-                kind: datasetKind,
-                numRows: this.datasets[id].length
-            });
-        }
-
-        return Promise.resolve(insightDatasets);
+            resolve(insightDatasets);
+        });
     }
 
     public performQuery(query: any): Promise <any[]> {
@@ -238,6 +243,21 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         throw new InsightError("Invalid comparator");
+    }
+
+    private static convertData(result: any): any {
+        const course: {[key: string]: any} = {};
+        course["dept"] = result["Subject"];
+        course["id"] = result["Course"];
+        course["avg"] = result["Avg"];
+        course["instructor"] = result["Professor"];
+        course["title"] = result["Title"];
+        course["pass"] = result["Pass"];
+        course["fail"] = result["Fail"];
+        course["audit"] = result["Audit"];
+        course["uuid"] = result["id"] + "";
+        course["year"] = parseInt(result["Year"], 10);
+        return course;
     }
 
     private static compareResults(a: any, b: any, options: any): number {
