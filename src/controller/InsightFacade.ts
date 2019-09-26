@@ -75,12 +75,11 @@ export default class InsightFacade implements IInsightFacade {
         if (id.includes("_") || id.trim().length === 0) {
             return Promise.reject(new InsightError("Field id format not valid"));
         }
-        try{
+        try {
             delete this.datasets[id];
         } catch (err) {
             return Promise.reject(new InsightError("fail to delete"));
         }
-
         return Promise.resolve(id);
     }
 
