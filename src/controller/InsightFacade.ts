@@ -63,14 +63,14 @@ export default class InsightFacade implements IInsightFacade {
                         throw new InsightError("The zip must contain at least one course");
                     }
                     resolve([id]);
-                }).catch((err) => reject(err));
-            }).catch((err) => reject(err));
+                }).catch((err) => reject(new InsightError("")));
+            }).catch((err) => reject(new InsightError("")));
         });
     }
 
     public removeDataset(id: string): Promise<string> {
         if (!Object.keys(this.datasets).includes(id)) {
-            return Promise.reject("Dataset not exists");
+            return Promise.reject(new InsightError("Dataset not exists"));
         }
 
         delete this.datasets[id];
