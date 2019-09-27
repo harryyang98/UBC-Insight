@@ -3,6 +3,7 @@ import {IInsightFacade, InsightDataset, InsightDatasetKind, ResultTooLargeError}
 import {InsightError, NotFoundError} from "./IInsightFacade";
 import * as JSZip from "jszip";
 import {SetUtils} from "../SetUtils";
+import {DataUtils} from "../DataUtils";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -31,39 +32,39 @@ export default class InsightFacade implements IInsightFacade {
         return new Promise<string[]>((resolve, reject) => {
             // unzip string and read data to courseSets
             JSZip.loadAsync(content, {base64: true}).then((zip) => {
+                return Promise.resolve(zip);
+            }).then((zip) => {
                 if (Object.keys(zip.files).length === 0) {
-                    throw new InsightError("Zip must contain one or more files");
+                    return Promise.reject(new InsightError("Zip must contain one or more files"));
                 }
 
                 const threads: any[] = [];
                 for (const key of Object.keys(zip.files)) {
                     // check if file or folder is valid
-                    const name: string = zip.files[key].name;
-                    if (zip.files[key].dir) {
-                        if (name !== "courses/") {
-                            throw new InsightError("Zip cannot contain folders other than courses");
-                        }
+                    if (!DataUtils.isFileValid(zip.files[key])) {
                         continue;
-                    } else if (!name.includes("courses/") || name.split("/").length > 2) {
-                        throw new InsightError("All files should be in the courses folder");
                     }
 
                     // add every results in every files
-                    threads.push(zip.files[key].async("text").then((text) => {
-                        const results: [] = JSON.parse(text)["result"];
-                        for (const result of results) {
-                            // add result to dataset
-                            dataset.push(InsightFacade.convertData(result));
-                        }
-                    }).catch((err) => Log.trace("Skipped invalid file: " + name)));
+                    threads.push(new Promise((rs, rj) => {
+                        zip.files[key].async("text").then((text) => {
+                            rs(JSON.parse(text)["result"]);
+                        }).catch((err) => rs([]));
+                    }));
+                }
+                return Promise.all(threads);
+            }).then((lists) => {
+                for (const list of lists) {
+                    for (const result of list) {
+                        // add result to dataset
+                        dataset.push(InsightFacade.convertData(result));
+                    }
                 }
 
-                Promise.all(threads).then(() => {
-                    if (dataset.length === 0) {
-                        throw new InsightError("The zip must contain at least one course");
-                    }
-                    resolve([id]);
-                }).catch((err) => reject(new InsightError(err.message)));
+                if (dataset.length === 0) {
+                    return Promise.reject(new InsightError("The zip must contain at least one course"));
+                }
+                resolve([id]);
             }).catch((err) => reject(new InsightError(err.message)));
         });
     }
@@ -114,9 +115,9 @@ export default class InsightFacade implements IInsightFacade {
                 // extract dataset id from query
                 const id: string = query["OPTIONS"]["COLUMNS"][0].split("_")[0];
                 if (id === undefined) {
-                    reject(new InsightError("Id cannot be empty value"));
+                    return reject(new InsightError("Id cannot be empty value"));
                 } else if (!Object.keys(self.datasets).includes(id) || self.datasets[id].length <= 0) {
-                    reject(new InsightError("Dataset not exists"));
+                    return reject(new InsightError("Dataset not exists"));
                 }
 
                 // find all the courses matching where
@@ -127,7 +128,7 @@ export default class InsightFacade implements IInsightFacade {
                 const columns: string[] = query["OPTIONS"]["COLUMNS"];
                 for (const column of columns) {
                     if (!/^[^_]+_[^_]+$/.test(column)) {
-                        reject(new InsightError("Invalid key format in columns"));
+                        return reject(new InsightError("Invalid key format in columns"));
                     }
                 }
                 for (const course of courseSet) {
@@ -136,7 +137,7 @@ export default class InsightFacade implements IInsightFacade {
                         if (Object.keys(self.datasets[id][course]).includes(column.split("_")[1])) {
                             result[column] = self.datasets[id][course][column.split("_")[1]];
                         } else {
-                            reject(new InsightError("Key in columns not exists in dataset: " + column));
+                            return reject(new InsightError("Key in columns not exists in dataset: " + column));
                         }
                     }
                     results.push(result);
@@ -145,13 +146,13 @@ export default class InsightFacade implements IInsightFacade {
                 // order the columns
                 if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
                     if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
-                        reject(new InsightError("Value of ORDER not exists in COLUMNS"));
+                        return reject(new InsightError("Value of ORDER not exists in COLUMNS"));
                     }
                     results.sort((a, b) => InsightFacade.compareResults(a, b, query["OPTIONS"]));
                 }
 
                 if (results.length > 5000) {
-                    reject(new ResultTooLargeError());
+                    return reject(new ResultTooLargeError());
                 }
                 resolve(results);
             } catch (err) { reject(new InsightError(err.message)); }
