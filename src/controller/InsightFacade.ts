@@ -146,7 +146,7 @@ export default class InsightFacade implements IInsightFacade {
                     results.push(result);
                 }
 
-                // order the columns
+                // order the column
                 if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
                     if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
                         return reject(new InsightError("Value of ORDER not exists in COLUMNS"));
@@ -193,13 +193,15 @@ export default class InsightFacade implements IInsightFacade {
             }
 
             // filter courses
-            if (Object.keys(filterContent).length !== 1) {
+            if (!(Object.keys(filterContent).length === 1)) {
                 throw new InsightError("Filter content should have one and only one key");
             }
             const contentKey = Object.keys(filterContent)[0];
             const contentValue = filterContent[contentKey];
             if (!/^[^_]+_[^_]+$/.test(contentKey)) {
                 throw new InsightError("Invalid key format in filter content");
+            } else if (contentKey.split("_")[0] !== id) {
+                throw new InsightError("Cannot query from two datasets");
             }
             const datasetKey = contentKey.split("_")[1];
             return InsightFacade.filterCourses(dataset, allCourses, datasetKey, contentValue, comparator);
