@@ -19,7 +19,7 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
-        if (id.includes("_") || id.trim().length === 0) {
+        if (id.includes("_") || id.trim().length === 0 || typeof id !== "string") {
             return Promise.reject(new InsightError("Field id format not valid"));
         } else if (Object.keys(this.datasets).includes(id)) {
             return Promise.reject(new InsightError("Cannot add with duplicated id"));
@@ -56,15 +56,17 @@ export default class InsightFacade implements IInsightFacade {
             }).then((lists) => {
                 for (const list of lists) {
                     for (const result of list) {
-                        // add result to dataset
-                        dataset.push(InsightFacade.convertData(result));
+                        try {
+                            // add result to dataset
+                            dataset.push(InsightFacade.convertData(result));
+                        } catch (err) { continue; }
                     }
                 }
 
                 if (dataset.length === 0) {
                     return Promise.reject(new InsightError("The zip must contain at least one course"));
                 }
-                resolve([id]);
+                resolve(Object.keys(this.datasets));
             }).catch((err) => reject(new InsightError(err.message)));
         });
     }
@@ -72,8 +74,10 @@ export default class InsightFacade implements IInsightFacade {
     public removeDataset(id: string): Promise<string> {
         const self = this;
         return new Promise((resolve, reject) => {
-            if (!Object.keys(self.datasets).includes(id)) {
-                reject(new NotFoundError("Dataset not exists"));
+            if (id.trim().length === 0 || typeof id !== "string") {
+                return reject(new InsightError("Id format not right"));
+            } else if (!Object.keys(self.datasets).includes(id)) {
+                return reject(new NotFoundError("Dataset not exists"));
             }
 
             delete self.datasets[id];
@@ -105,7 +109,8 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public performQuery(query: any): Promise <any[]> {
-        if (Object.keys(query).length !== 2) {
+        const queryKeys = Object.keys(query);
+        if (queryKeys.length !== 2 || !queryKeys.includes("OPTIONS") || !queryKeys.includes("WHERE")) {
             return Promise.reject(new InsightError("JSON has more keys than excepted"));
         }
 
@@ -114,9 +119,7 @@ export default class InsightFacade implements IInsightFacade {
             try {
                 // extract dataset id from query
                 const id: string = query["OPTIONS"]["COLUMNS"][0].split("_")[0];
-                if (id === undefined) {
-                    return reject(new InsightError("Id cannot be empty value"));
-                } else if (!Object.keys(self.datasets).includes(id) || self.datasets[id].length <= 0) {
+                if (!Object.keys(self.datasets).includes(id)) {
                     return reject(new InsightError("Dataset not exists"));
                 }
 
