@@ -50,7 +50,7 @@ export default class InsightFacade implements IInsightFacade {
                     return Promise.reject(new InsightError("The zip must contain at least one course"));
                 }
                 this.datasets.addDataset(id, dataset);
-                resolve(this.datasets.getKeys());
+                resolve(this.datasets.getIds());
             }).catch((err) => reject(new InsightError(err.message)));
         });
     }
@@ -75,7 +75,7 @@ export default class InsightFacade implements IInsightFacade {
         return new Promise<InsightDataset[]>((resolve, reject) => {
             const insightDatasets: InsightDataset[] = [];
 
-            for (const id of datasets.getKeys()) {
+            for (const id of datasets.getIds()) {
                 // check dataset kind
                 let datasetKind = InsightDatasetKind.Rooms;
                 if (Object.keys(datasets.getDataset(id)[0]).includes("dept")) {
@@ -112,33 +112,23 @@ export default class InsightFacade implements IInsightFacade {
                 const courseSet = self.findCourses(query["WHERE"], id);
 
                 // select specific columns and add to results
-                const results: any[] = new Array(0);
-                const columns: string[] = query["OPTIONS"]["COLUMNS"];
-                for (const column of columns) {
-                    if (!/^[^_]+_[^_]+$/.test(column)) {
-                        return reject(new InsightError("Invalid key format in columns"));
-                    }
-                }
-                for (const course of courseSet) {
-                    const result: any = { };
-                    for (const column of columns) {
-                        if (Object.keys(self.datasets.getDataset(id)[course]).includes(column.split("_")[1])) {
-                            result[column] = self.datasets.getDataset(id)[course][column.split("_")[1]];
-                        } else {
-                            return reject(new InsightError("Key in columns not exists in dataset: " + column));
-                        }
-                    }
-                    results.push(result);
-                }
+                const results = InsightFacade.selectColumns(
+                     courseSet, query["OPTIONS"]["COLUMNS"], this.datasets.getDataset(id)
+                );
 
-                // order the column
+                // sort the columns
                 if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
-                    if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
+                    if (Object.keys(query["OPTIONS"]).length > 2) {
+                        return reject(new InsightError("Invalid key in column"));
+                    } else if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
                         return reject(new InsightError("Value of ORDER not exists in COLUMNS"));
                     }
                     results.sort((a, b) => InsightFacade.compareResults(a, b, query["OPTIONS"]));
+                } else if (Object.keys(query["OPTIONS"]).length > 1) {
+                    return reject(new InsightError("Invalid key in column"));
                 }
 
+                // resolve results
                 if (results.length > 5000) {
                     return reject(new ResultTooLargeError());
                 }
@@ -237,6 +227,31 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         throw new InsightError("Invalid comparator");
+    }
+
+    private static selectColumns(courseSet: Set<number>, columns: any, dataset: any[]): any[] {
+        const results: any[] = new Array(0);
+
+        if (columns.length === 0) {
+            throw new InsightError("COLUMNS must not be an empty array");
+        }
+        for (const column of columns) {
+            if (!/^[^_]+_[^_]+$/.test(column)) {
+                throw new InsightError("Invalid key format in columns");
+            }
+        }
+        for (const course of courseSet) {
+            const result: any = { };
+            for (const column of columns) {
+                if (Object.keys(dataset[course]).includes(column.split("_")[1])) {
+                    result[column] = dataset[course][column.split("_")[1]];
+                } else {
+                    throw new InsightError("Key in columns not exists in dataset: " + column);
+                }
+            }
+            results.push(result);
+        }
+        return results;
     }
 
     private static compareResults(a: any, b: any, options: any): number {

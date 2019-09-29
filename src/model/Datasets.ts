@@ -52,7 +52,7 @@ export class Datasets {
         return fs.existsSync(this.path + id);
     }
 
-    public getKeys(): string[] {
+    public getIds(): string[] {
         const keys = Object.keys(this.caches);
         for (const key of fs.readdirSync(this.path)) {
             if (!keys.includes(key)) {
