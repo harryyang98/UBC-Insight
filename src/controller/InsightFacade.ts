@@ -1,4 +1,3 @@
-import Log from "../Util";
 import {IInsightFacade, InsightDataset, InsightDatasetKind, ResultTooLargeError} from "./IInsightFacade";
 import {InsightError, NotFoundError} from "./IInsightFacade";
 import * as JSZip from "jszip";
@@ -51,7 +50,7 @@ export default class InsightFacade implements IInsightFacade {
                     return Promise.reject(new InsightError("The zip must contain at least one course"));
                 }
                 this.datasets.addDataset(id, dataset);
-                resolve(Object.keys(this.datasets));
+                resolve(this.datasets.getKeys());
             }).catch((err) => reject(new InsightError(err.message)));
         });
     }
@@ -105,7 +104,7 @@ export default class InsightFacade implements IInsightFacade {
             try {
                 // extract dataset id from query
                 const id: string = query["OPTIONS"]["COLUMNS"][0].split("_")[0];
-                if (!Object.keys(self.datasets).includes(id)) {
+                if (!self.datasets.containsDataset(id)) {
                     return reject(new InsightError("Dataset not exists"));
                 }
 

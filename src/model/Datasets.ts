@@ -18,7 +18,7 @@ export class Datasets {
         this.caches[id] = data;
 
         // save to disk
-        fs.writeFileSync(this.path + id, new Uint8Array(Buffer.from(data.toString())));
+        fs.writeFileSync(this.path + id, new Uint8Array(Buffer.from(JSON.stringify(data))));
     }
 
     public getDataset(id: string): any[] {
@@ -26,11 +26,8 @@ export class Datasets {
             throw new InsightError("Dataset not found");
         }
 
-        if (Object.keys(this.caches).includes(id)) {
-            return this.caches[id];
-        }
-
-        return JSON.parse(fs.readFileSync(this.path + id, "utf-8"));
+        this.loadDataset(id);
+        return this.caches[id];
     }
 
     public removeDataset(id: string) {
@@ -66,4 +63,11 @@ export class Datasets {
         return keys;
     }
 
+    private loadDataset(id: string) {
+        if (Object.keys(this.caches).includes(id)) {
+            return;
+        }
+
+        this.caches[id] = JSON.parse(fs.readFileSync(this.path + id, "utf-8"));
+    }
 }

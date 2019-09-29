@@ -43,7 +43,7 @@ export class DataUtils {
         course["fail"] = result["Fail"];
         course["audit"] = result["Audit"];
         course["uuid"] = result["id"] + "";
-        if (result["Year"] === "overall") {
+        if (result["Section"] === "overall") {
             course["year"] = 1900;
         } else {
             course["year"] = parseInt(result["Year"], 10);
