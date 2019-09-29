@@ -4,6 +4,7 @@ import {InsightError, NotFoundError} from "./IInsightFacade";
 import * as JSZip from "jszip";
 import {SetUtils} from "../SetUtils";
 import {DataUtils} from "../DataUtils";
+import {Datasets} from "../model/Datasets";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -12,10 +13,10 @@ import {DataUtils} from "../DataUtils";
  */
 export default class InsightFacade implements IInsightFacade {
 
-    private readonly datasets: {[id: string]: any[]};
+    private readonly datasets: Datasets;
 
     constructor() {
-        this.datasets = { };
+        this.datasets = new Datasets();
     }
 
     public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
@@ -27,60 +28,45 @@ export default class InsightFacade implements IInsightFacade {
             return Promise.reject(new InsightError("Invalid or not implemented dataset kind"));
         }
 
-        this.datasets[id] = [];
-        const dataset: any[] = this.datasets[id];
-        return new Promise<string[]>((resolve, reject) => {
+        const dataset: any[] = [];
+        return new Promise((resolve, reject) => {
             // unzip string and read data to courseSets
-            JSZip.loadAsync(content, {base64: true}).then((zip) => {
+            JSZip.loadAsync(content, {base64: true}).then<JSZip>((zip) => {
                 return Promise.resolve(zip);
-            }).then((zip) => {
-                if (Object.keys(zip.files).length === 0) {
-                    return Promise.reject(new InsightError("Zip must contain one or more files"));
-                }
-
-                const threads: any[] = [];
-                for (const key of Object.keys(zip.files)) {
-                    // check if file or folder is valid
-                    if (!DataUtils.isFileValid(zip.files[key])) {
-                        continue;
-                    }
-
-                    // add every results in every files
-                    threads.push(new Promise((rs, rj) => {
-                        zip.files[key].async("text").then((text) => {
-                            rs(JSON.parse(text)["result"]);
-                        }).catch((err) => rs([]));
-                    }));
-                }
-                return Promise.all(threads);
-            }).then((lists) => {
-                for (const list of lists) {
-                    for (const result of list) {
-                        try {
+            }).then<any[]>((zip) => {
+                return DataUtils.extractZip(zip);
+            }).then((courseLists) => {
+                for (const courseList of courseLists) {
+                    const temp: any[] = [];
+                    try {
+                        for (const result of courseList) {
                             // add result to dataset
-                            dataset.push(InsightFacade.convertData(result));
-                        } catch (err) { continue; }
-                    }
+                            temp.push(DataUtils.convertData(result));
+                        }
+                    } catch (err) { continue; }
+                    dataset.push(...temp);
                 }
 
                 if (dataset.length === 0) {
                     return Promise.reject(new InsightError("The zip must contain at least one course"));
                 }
+                this.datasets.addDataset(id, dataset);
                 resolve(Object.keys(this.datasets));
             }).catch((err) => reject(new InsightError(err.message)));
         });
     }
 
     public removeDataset(id: string): Promise<string> {
+        if (id.trim().length === 0 || typeof id !== "string") {
+            return Promise.reject(new InsightError("Id format not right"));
+        }
+
         const self = this;
         return new Promise((resolve, reject) => {
-            if (id.trim().length === 0 || typeof id !== "string") {
-                return reject(new InsightError("Id format not right"));
-            } else if (!Object.keys(self.datasets).includes(id)) {
-                return reject(new NotFoundError("Dataset not exists"));
-            }
+            try {
+                self.datasets.removeDataset(id);
+            } catch (err) { return reject(err); }
 
-            delete self.datasets[id];
             resolve(id);
         });
     }
@@ -90,17 +76,17 @@ export default class InsightFacade implements IInsightFacade {
         return new Promise<InsightDataset[]>((resolve, reject) => {
             const insightDatasets: InsightDataset[] = [];
 
-            for (const id of Object.keys(datasets)) {
+            for (const id of datasets.getKeys()) {
                 // check dataset kind
                 let datasetKind = InsightDatasetKind.Rooms;
-                if (Object.keys(datasets[id][0]).includes("dept")) {
+                if (Object.keys(datasets.getDataset(id)[0]).includes("dept")) {
                     datasetKind = InsightDatasetKind.Courses;
                 }
 
                 insightDatasets.push({
                     id: id,
                     kind: datasetKind,
-                    numRows: datasets[id].length
+                    numRows: datasets.getDataset(id).length
                 });
             }
 
@@ -137,8 +123,8 @@ export default class InsightFacade implements IInsightFacade {
                 for (const course of courseSet) {
                     const result: any = { };
                     for (const column of columns) {
-                        if (Object.keys(self.datasets[id][course]).includes(column.split("_")[1])) {
-                            result[column] = self.datasets[id][course][column.split("_")[1]];
+                        if (Object.keys(self.datasets.getDataset(id)[course]).includes(column.split("_")[1])) {
+                            result[column] = self.datasets.getDataset(id)[course][column.split("_")[1]];
                         } else {
                             return reject(new InsightError("Key in columns not exists in dataset: " + column));
                         }
@@ -163,7 +149,7 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     private findCourses(filter: any, id: string): Set<number> {
-        const dataset = this.datasets[id];
+        const dataset = this.datasets.getDataset(id);
         const allCourses = new Set(Array.from(Array(dataset.length).keys()));
         if (Object.keys(filter).length === 0) {
             return allCourses;
@@ -249,27 +235,6 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         throw new InsightError("Invalid comparator");
-    }
-
-    private static convertData(result: any): any {
-        const course: {[key: string]: any} = {};
-        course["dept"] = result["Subject"];
-        course["id"] = result["Course"];
-        course["avg"] = result["Avg"];
-        course["instructor"] = result["Professor"];
-        course["title"] = result["Title"];
-        course["pass"] = result["Pass"];
-        course["fail"] = result["Fail"];
-        course["audit"] = result["Audit"];
-        course["uuid"] = result["id"] + "";
-        course["year"] = parseInt(result["Year"], 10);
-
-        for (const key of Object.keys(course)) {
-            if (course[key] === undefined) {
-                throw new InsightError("File JSON Format not okay");
-            }
-        }
-        return course;
     }
 
     private static compareResults(a: any, b: any, options: any): number {
