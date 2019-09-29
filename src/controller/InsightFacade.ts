@@ -160,6 +160,9 @@ export default class InsightFacade implements IInsightFacade {
         if (filter[comparator] instanceof Array) {
             const subSets: Array<Set<number>> = [];
             for (const subFilter of filter[comparator]) {
+                if (!(Object.keys(subFilter).length === 1)) {
+                    throw new InsightError("There must not be empty object in AND or OR");
+                }
                 subSets.push(this.findCourses(subFilter, id));
             }
             if (subSets.length === 0) {

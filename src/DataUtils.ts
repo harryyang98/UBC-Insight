@@ -16,7 +16,7 @@ export class DataUtils {
             if (name === "courses/") {
                 hasRoot = true;
             } else if (!name.includes("courses/") || name.split("/").length > 2) {
-                continue;
+                return Promise.reject(new InsightError("Zip format not right"));
             }
 
             // add every results in every files

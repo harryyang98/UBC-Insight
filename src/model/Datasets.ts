@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import {InsightError, NotFoundError} from "../controller/IInsightFacade";
 
 export class Datasets {
@@ -41,7 +41,7 @@ export class Datasets {
         }
 
         // remove from disk
-        fs.unlinkSync(this.path + id);
+        fs.removeSync(this.path + id);
     }
 
     public containsDataset(id: string): boolean {
