@@ -19,9 +19,9 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
-        if (id.includes("_") || id.trim().length === 0 || typeof id !== "string") {
+        if (!InsightFacade.isIdValid(id)) {
             return Promise.reject(new InsightError("Field id format not valid"));
-        } else if (Object.keys(this.datasets).includes(id)) {
+        } else if (this.datasets.containsDataset(id)) {
             return Promise.reject(new InsightError("Cannot add with duplicated id"));
         } else if (kind !== InsightDatasetKind.Courses) {
             return Promise.reject(new InsightError("Invalid or not implemented dataset kind"));
@@ -56,7 +56,7 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public removeDataset(id: string): Promise<string> {
-        if (id.trim().length === 0 || typeof id !== "string") {
+        if (!InsightFacade.isIdValid(id)) {
             return Promise.reject(new InsightError("Id format not right"));
         }
 
@@ -95,7 +95,7 @@ export default class InsightFacade implements IInsightFacade {
 
     public performQuery(query: any): Promise <any[]> {
         const queryKeys = Object.keys(query);
-        if (queryKeys.length !== 2 || !queryKeys.includes("OPTIONS") || !queryKeys.includes("WHERE")) {
+        if (!(queryKeys.length === 2) || !queryKeys.includes("OPTIONS") || !queryKeys.includes("WHERE")) {
             return Promise.reject(new InsightError("JSON has more keys than excepted"));
         }
 
@@ -160,9 +160,9 @@ export default class InsightFacade implements IInsightFacade {
         if (filter[comparator] instanceof Array) {
             const subSets: Array<Set<number>> = [];
             for (const subFilter of filter[comparator]) {
-                if (!(Object.keys(subFilter).length === 1)) {
-                    throw new InsightError("There must not be empty object in AND or OR");
-                }
+                // if (!(Object.keys(subFilter).length === 1)) {
+                //     throw new InsightError("There must not be empty object in AND or OR");
+                // }
                 subSets.push(this.findCourses(subFilter, id));
             }
             if (subSets.length === 0) {
@@ -261,5 +261,20 @@ export default class InsightFacade implements IInsightFacade {
             return 0;
         }
         return a > b ? 1 : -1;
+    }
+
+    private static isIdValid(id: any): boolean {
+        if (!(typeof id === "string")) {
+            return false;
+        } else if (id.includes("_")) {
+            return false;
+        }
+
+        for (const c of id) {
+            if (c !== " ") {
+                return true;
+            }
+        }
+        return false;
     }
 }
