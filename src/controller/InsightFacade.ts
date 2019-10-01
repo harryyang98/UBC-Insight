@@ -142,6 +142,9 @@ export default class InsightFacade implements IInsightFacade {
         const dataset = this.datasets.getDataset(id);
         const allCourses = new Set(Array.from(Array(dataset.length).keys()));
         if (Object.keys(filter).length === 0) {
+            if (!JSON.stringify(filter).includes("{")) {
+                throw new InsightError("WHERE must be an object");
+            }
             return allCourses;
         } else if (Object.keys(filter).length > 1) {
             throw new InsightError("There cannot be more than one object in filter");
