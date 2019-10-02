@@ -142,9 +142,9 @@ export default class InsightFacade implements IInsightFacade {
         const dataset = this.datasets.getDataset(id);
         const allCourses = new Set(Array.from(Array(dataset.length).keys()));
         if (Object.keys(filter).length === 0) {
-            if (!JSON.stringify(filter).includes("{")) {
-                throw new InsightError("WHERE must be an object");
-            }
+            // if (!JSON.stringify(filter).includes("{")) {
+            //     throw new InsightError("WHERE must be an object");
+            // }
             return allCourses;
         } else if (Object.keys(filter).length > 1) {
             throw new InsightError("There cannot be more than one object in filter");
@@ -171,6 +171,9 @@ export default class InsightFacade implements IInsightFacade {
         } else {
             const filterContent = filter[comparator];
             if (comparator === "NOT") {
+                if (Object.keys(filter[comparator]).length === 0) {
+                    throw new InsightError("NOT must contain one object");
+                }
                 return SetUtils.complementary(this.findCourses(filterContent, id), allCourses);
             }
 
@@ -274,7 +277,6 @@ export default class InsightFacade implements IInsightFacade {
             }
             return a.length > b.length ? 1 : -1;
         }
-
         if (a === b) {
             return 0;
         }
@@ -287,7 +289,6 @@ export default class InsightFacade implements IInsightFacade {
         } else if (id.includes("_")) {
             return false;
         }
-
         for (const c of id) {
             if (c !== " ") {
                 return true;
