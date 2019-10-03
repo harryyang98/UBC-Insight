@@ -109,6 +109,9 @@ export default class InsightFacade implements IInsightFacade {
                 }
 
                 // find all the courses matching where
+                if (typeof query["WHERE"] !== "object") {
+                    return reject("WHERE must be an object");
+                }
                 const courseSet = self.findCourses(query["WHERE"], id);
 
                 // select specific columns and add to results
@@ -154,9 +157,6 @@ export default class InsightFacade implements IInsightFacade {
         if (filter[comparator] instanceof Array) {
             const subSets: Array<Set<number>> = [];
             for (const subFilter of filter[comparator]) {
-                // if (!(Object.keys(subFilter).length === 1)) {
-                //     throw new InsightError("There must not be empty object in AND or OR");
-                // }
                 subSets.push(this.findCourses(subFilter, id));
             }
             if (subSets.length === 0) {
@@ -171,9 +171,6 @@ export default class InsightFacade implements IInsightFacade {
         } else {
             const filterContent = filter[comparator];
             if (comparator === "NOT") {
-                if (Object.keys(filter[comparator]).length === 0) {
-                    throw new InsightError("NOT must contain one object");
-                }
                 return SetUtils.complementary(this.findCourses(filterContent, id), allCourses);
             }
 
@@ -272,14 +269,10 @@ export default class InsightFacade implements IInsightFacade {
                     return a.charCodeAt(i) > b.charCodeAt(i) ? 1 : -1;
                 }
             }
-            if (a.length === b.length) {
-                return 0;
-            }
+            if (a.length === b.length) { return 0; }
             return a.length > b.length ? 1 : -1;
         }
-        if (a === b) {
-            return 0;
-        }
+        if (a === b) { return 0; }
         return a > b ? 1 : -1;
     }
 
