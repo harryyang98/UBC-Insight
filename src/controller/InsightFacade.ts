@@ -116,9 +116,7 @@ export default class InsightFacade implements IInsightFacade {
 
                 // select specific columns and add to results
                 let results;
-                try {
-                    results = this.selectColumns(courseSet, query["OPTIONS"]["COLUMNS"], id);
-                } catch (err) { return reject(err); }
+                results = this.selectColumns(courseSet, query["OPTIONS"]["COLUMNS"], id);
 
                 // sort the columns
                 if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
@@ -207,8 +205,7 @@ export default class InsightFacade implements IInsightFacade {
         mapping["IS"] = ["string", (a: any, regex: any) => {
             if (!regex.includes("*")) {
                 return a === regex;
-            }
-            if (!/^\*?[^\*]*\*?$/.test(regex)) {
+            } else if (!/^\*?[^\*]*\*?$/.test(regex)) {
                 throw new InsightError("Invalid regex filter value");
             }
             return new RegExp("^" + regex.split("*").join(".*") + "$").test(a);
