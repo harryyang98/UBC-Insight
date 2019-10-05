@@ -109,14 +109,21 @@ export default class InsightFacade implements IInsightFacade {
                 }
 
                 // find all the courses matching where
+                let courseSet: Set<number>;
                 if (typeof query["WHERE"] !== "object") {
                     return reject("WHERE must be an object");
                 }
-                const courseSet = self.findCourses(query["WHERE"], id);
+                if (Object.keys(query["WHERE"]).length === 0 && !(typeof query["WHERE"] === "string")) {
+                    courseSet = new Set(Array.from(Array(self.datasets.getDataset(id).length).keys()));
+                } else {
+                    courseSet = self.findCourses(query["WHERE"], id);
+                }
 
                 // select specific columns and add to results
-                let results;
-                results = this.selectColumns(courseSet, query["OPTIONS"]["COLUMNS"], id);
+                let results = this.selectColumns(courseSet, query["OPTIONS"]["COLUMNS"], id);
+                if (results.length > 5000) {
+                    return reject(new ResultTooLargeError());
+                }
 
                 // sort the columns
                 if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
@@ -131,9 +138,6 @@ export default class InsightFacade implements IInsightFacade {
                 }
 
                 // resolve results
-                if (results.length > 5000) {
-                    return reject(new ResultTooLargeError());
-                }
                 resolve(results);
             } catch (err) { reject(new InsightError(err.message)); }
         });
@@ -142,13 +146,8 @@ export default class InsightFacade implements IInsightFacade {
     private findCourses(filter: any, id: string): Set<number> {
         const dataset = this.datasets.getDataset(id);
         const allCourses = new Set(Array.from(Array(dataset.length).keys()));
-        if (Object.keys(filter).length === 0) {
-            // if (!JSON.stringify(filter).includes("{")) {
-            //     throw new InsightError("WHERE must be an object");
-            // }
-            return allCourses;
-        } else if (Object.keys(filter).length > 1) {
-            throw new InsightError("There cannot be more than one object in filter");
+        if (Object.keys(filter).length > 1 || Object.keys(filter).length === 0) {
+            throw new InsightError("There cannot be more than one or no objects in filter");
         }
 
         const comparator: string = Object.keys(filter)[0];
