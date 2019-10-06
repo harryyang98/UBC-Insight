@@ -78,7 +78,7 @@ export default class InsightFacade implements IInsightFacade {
             for (const id of datasets.getIds()) {
                 // check dataset kind
                 let datasetKind = InsightDatasetKind.Rooms;
-                if (Object.keys(datasets.getDataset(id)[0]).includes("dept")) {
+                if (datasets.getDataset(id)[0].hasOwnProperty("dept")) {
                     datasetKind = InsightDatasetKind.Courses;
                 }
 
@@ -103,7 +103,9 @@ export default class InsightFacade implements IInsightFacade {
         return new Promise<any>((resolve, reject) => {
             try {
                 // extract dataset id from query
-                const id: string = query["OPTIONS"]["COLUMNS"][0].split("_")[0];
+                const options = query["OPTIONS"];
+                const columns = options["COLUMNS"];
+                const id: string = columns[0].split("_")[0];
                 if (!self.datasets.containsDataset(id)) {
                     return reject(new InsightError("Dataset not exists"));
                 }
@@ -111,9 +113,7 @@ export default class InsightFacade implements IInsightFacade {
                 // find all the courses matching where
                 let courseSet: Set<number>;
                 const where = query["WHERE"];
-                if (typeof where !== "object") {
-                    return reject("WHERE must be an object");
-                } else if (
+                if (
                     Object.keys(where).length === 0 && !(typeof where === "string") && !(where instanceof Array)
                 ) {
                     courseSet = new Set(Array.from(Array(self.datasets.getDataset(id).length).keys()));
@@ -122,17 +122,15 @@ export default class InsightFacade implements IInsightFacade {
                 }
 
                 // select specific columns and add to results
-                let results = this.selectColumns(courseSet, query["OPTIONS"]["COLUMNS"], id);
+                let results = this.selectColumns(courseSet, columns, id);
 
                 // sort the columns
-                if (Object.keys(query["OPTIONS"]).includes("ORDER")) {
-                    if (Object.keys(query["OPTIONS"]).length > 2) {
-                        return reject(new InsightError("Invalid key in column"));
-                    } else if (!query["OPTIONS"]["COLUMNS"].includes(query["OPTIONS"]["ORDER"])) {
-                        return reject(new InsightError("Value of ORDER not exists in COLUMNS"));
+                if (Object.keys(options).includes("ORDER")) {
+                    if (Object.keys(options).length > 2 || !columns.includes(options["ORDER"])) {
+                        return reject(new InsightError("Invalid columns with orders"));
                     }
-                    results.sort((a, b) => InsightFacade.compareResults(a, b, query["OPTIONS"]));
-                } else if (Object.keys(query["OPTIONS"]).length > 1) {
+                    results.sort((a, b) => InsightFacade.compareResults(a[options["ORDER"]], b[options["ORDER"]]));
+                } else if (Object.keys(options).length > 1) {
                     return reject(new InsightError("Invalid key in column"));
                 }
 
@@ -158,11 +156,10 @@ export default class InsightFacade implements IInsightFacade {
             for (const subFilter of filter[comparator]) {
                 subSets.push(this.findCourses(subFilter, id));
             }
+
             if (subSets.length === 0) {
                 throw new InsightError("AND and OR must have at least one element");
-            }
-
-            if (comparator === "OR") {
+            } else if (comparator === "OR") {
                 return SetUtils.union(subSets);
             } else if (comparator === "AND") {
                 return SetUtils.intersecion(subSets);
@@ -179,10 +176,8 @@ export default class InsightFacade implements IInsightFacade {
             }
             const contentKey = Object.keys(filterContent)[0];
             const contentValue = filterContent[contentKey];
-            if (!/^[^_]+_[^_]+$/.test(contentKey)) {
-                throw new InsightError("Invalid key format in filter content");
-            } else if (contentKey.split("_")[0] !== id) {
-                throw new InsightError("Cannot query from two datasets");
+            if (!/^[^_]+_[^_]+$/.test(contentKey) || contentKey.split("_")[0] !== id) {
+                throw new InsightError("Invalid key format in filter content or query two datasets");
             }
             const datasetKey = contentKey.split("_")[1];
             return InsightFacade.filterCourses(dataset, allCourses, datasetKey, contentValue, comparator);
@@ -216,16 +211,13 @@ export default class InsightFacade implements IInsightFacade {
         mapping["GT"] = ["number", (a: any, b: any) => a > b];
 
         if (Object.keys(mapping).includes(comparator)) {
-            if (typeof value !== mapping[comparator][0]) {
+            const type = mapping[comparator][0];
+            if (typeof value !== type || typeof dataset[0][key] !== type) {
                 throw new InsightError("Filter content type not valid");
-            } else if (typeof dataset[0][key] !== mapping[comparator][0]) {
-                throw new InsightError("Filter content type not match");
             }
 
-            return SetUtils.setFilter(
-                allCourses,
-                (course) => mapping[comparator][1](dataset[course][key], value)
-            );
+            const comp = mapping[comparator][1];
+            return SetUtils.setFilter(allCourses, (course) => comp(dataset[course][key], value));
         }
 
         throw new InsightError("Invalid comparator");
@@ -254,12 +246,7 @@ export default class InsightFacade implements IInsightFacade {
         return results;
     }
 
-    private static compareResults(a: any, b: any, options: any): number {
-        const order: string = options["ORDER"];
-        return InsightFacade.rule(a[order], b[order]);
-    }
-
-    private static rule(a: any, b: any): number {
+    private static compareResults(a: any, b: any): number {
         if (typeof a === "string") {
             for (let i = 0; i < Math.min(a.length, b.length); i ++) {
                 if (a.charCodeAt(i) !== b.charCodeAt(i)) {
