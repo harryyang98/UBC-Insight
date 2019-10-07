@@ -94,13 +94,16 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public performQuery(query: any): Promise <any[]> {
-        if (!(Object.keys(query).length === 2) || !query.hasOwnProperty("OPTIONS") || !query.hasOwnProperty("WHERE")) {
-            return Promise.reject(new InsightError("JSON has more keys than excepted"));
-        }
-
         const self = this;
         return new Promise<any>((resolve, reject) => {
             try {
+                if (!(Object.keys(query).length === 2)
+                    || !query.hasOwnProperty("OPTIONS")
+                    || !query.hasOwnProperty("WHERE")
+                ) {
+                    reject(new InsightError("JSON has more keys than excepted"));
+                }
+
                 // extract dataset id from query
                 const options = query["OPTIONS"];
                 const columns = options["COLUMNS"];
@@ -138,14 +141,14 @@ export default class InsightFacade implements IInsightFacade {
                     return reject(new ResultTooLargeError());
                 }
                 resolve(results);
-            } catch (err) { reject(new InsightError(err.message)); }
+            } catch (err) { reject(new InsightError("Caught: " + err.message)); }
         });
     }
 
     private findCourses(filter: any, id: string): Set<number> {
         const dataset = this.datasets.getDataset(id);
         const allCourses = new Set(Array.from(Array(dataset.length).keys()));
-        if (Object.keys(filter).length > 1 || Object.keys(filter).length === 0) {
+        if (!(Object.keys(filter).length === 1)) {
             throw new InsightError("There cannot be more than one or no objects in filter");
         }
 
@@ -192,7 +195,7 @@ export default class InsightFacade implements IInsightFacade {
             throw new InsightError("Key in filter content not found in dataset");
         }
 
-        const mapping: any = { };
+        const mapping: any = {};
         mapping["IS"] = ["string", (a: any, regex: any) => {
             if (!regex.includes("*")) {
                 return a === regex;
@@ -221,26 +224,23 @@ export default class InsightFacade implements IInsightFacade {
     private selectColumns(courseSet: Set<number>, columns: any, id: string): any[] {
         const results: any[] = new Array(0);
 
+        const temp: string[] = [];
         for (const column of columns) {
             if (!/^[^_]+_[^_]+$/.test(column)) {
                 throw new InsightError("Invalid key format in columns");
             } else if (
                 column.split("_")[0] !== id
                 || !this.datasets.getDataset(id)[0].hasOwnProperty(column.split("_")[1])
+                || temp.includes(column)
             ) {
                 throw new InsightError("Cannot query from two datasets or key does not exist");
             }
+            temp.push(column);
         }
         for (const course of courseSet) {
-            const result: any = { };
-            const temp: string[] = [];
+            const result: any = {};
             for (const column of columns) {
-                if (!temp.includes(column)) {
-                    result[column] = this.datasets.getDataset(id)[course][column.split("_")[1]];
-                } else {
-                    throw new InsightError("Duplicated columns");
-                }
-                temp.push(column);
+                result[column] = this.datasets.getDataset(id)[course][column.split("_")[1]];
             }
             results.push(result);
         }
