@@ -94,8 +94,7 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     public performQuery(query: any): Promise <any[]> {
-        const queryKeys = Object.keys(query);
-        if (!(queryKeys.length === 2) || !queryKeys.includes("OPTIONS") || !queryKeys.includes("WHERE")) {
+        if (!(Object.keys(query).length === 2) || !query.hasOwnProperty("OPTIONS") || !query.hasOwnProperty("WHERE")) {
             return Promise.reject(new InsightError("JSON has more keys than excepted"));
         }
 
@@ -125,7 +124,7 @@ export default class InsightFacade implements IInsightFacade {
                 let results = this.selectColumns(courseSet, columns, id);
 
                 // sort the columns
-                if (Object.keys(options).includes("ORDER")) {
+                if (options.hasOwnProperty("ORDER")) {
                     if (Object.keys(options).length > 2 || !columns.includes(options["ORDER"])) {
                         return reject(new InsightError("Invalid columns with orders"));
                     }
@@ -189,7 +188,7 @@ export default class InsightFacade implements IInsightFacade {
     private static filterCourses(
         dataset: any[], allCourses: Set<number>, key: string, value: any, comparator: string
     ): Set<number> {
-        if (!Object.keys(dataset[0]).includes(key)) {
+        if (!dataset[0].hasOwnProperty(key)) {
             throw new InsightError("Key in filter content not found in dataset");
         }
 
@@ -206,7 +205,7 @@ export default class InsightFacade implements IInsightFacade {
         mapping["LT"] = ["number", (a: any, b: any) => a < b];
         mapping["GT"] = ["number", (a: any, b: any) => a > b];
 
-        if (Object.keys(mapping).includes(comparator)) {
+        if (mapping.hasOwnProperty(comparator)) {
             const type = mapping[comparator][0];
             if (typeof value !== type || typeof dataset[0][key] !== type) {
                 throw new InsightError("Filter content type not valid");
@@ -227,7 +226,7 @@ export default class InsightFacade implements IInsightFacade {
                 throw new InsightError("Invalid key format in columns");
             } else if (
                 column.split("_")[0] !== id
-                || !Object.keys(this.datasets.getDataset(id)[0]).includes(column.split("_")[1])
+                || !this.datasets.getDataset(id)[0].hasOwnProperty(column.split("_")[1])
             ) {
                 throw new InsightError("Cannot query from two datasets or key does not exist");
             }
