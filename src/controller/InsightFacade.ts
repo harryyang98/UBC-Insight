@@ -113,9 +113,9 @@ export default class InsightFacade implements IInsightFacade {
                 // find all the courses matching where
                 let courseSet: Set<number>;
                 const where = query["WHERE"];
-                if (
-                    Object.keys(where).length === 0 && !(typeof where === "string") && !(where instanceof Array)
-                ) {
+                if (typeof where !== "object" || where instanceof Array) {
+                    return reject(new InsightError("WHERE must be an object"));
+                } else if (Object.keys(where).length === 0) {
                     courseSet = new Set(Array.from(Array(self.datasets.getDataset(id).length).keys()));
                 } else {
                     courseSet = self.findCourses(where, id);
@@ -187,11 +187,7 @@ export default class InsightFacade implements IInsightFacade {
     }
 
     private static filterCourses(
-        dataset: any[],
-        allCourses: Set<number>,
-        key: string,
-        value: any,
-        comparator: string
+        dataset: any[], allCourses: Set<number>, key: string, value: any, comparator: string
     ): Set<number> {
         if (!Object.keys(dataset[0]).includes(key)) {
             throw new InsightError("Key in filter content not found in dataset");
@@ -238,8 +234,14 @@ export default class InsightFacade implements IInsightFacade {
         }
         for (const course of courseSet) {
             const result: any = { };
+            const temp: string[] = [];
             for (const column of columns) {
-                result[column] = this.datasets.getDataset(id)[course][column.split("_")[1]];
+                if (!temp.includes(column)) {
+                    result[column] = this.datasets.getDataset(id)[course][column.split("_")[1]];
+                } else {
+                    throw new InsightError("Duplicated columns");
+                }
+                temp.push(column);
             }
             results.push(result);
         }
