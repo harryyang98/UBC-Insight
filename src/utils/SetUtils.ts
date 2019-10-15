@@ -3,7 +3,9 @@ export class SetUtils {
     public static union(sets: Array<Set<number>>): Set<number> {
         const n = new Set<number>();
         for (const set of sets) {
-            set.forEach((e) => n.add(e));
+            set.forEach((e) => {
+                return n.add(e);
+            });
         }
         return n;
     }

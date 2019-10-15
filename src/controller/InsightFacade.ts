@@ -1,9 +1,12 @@
-import {IInsightFacade, InsightDataset, InsightDatasetKind, ResultTooLargeError} from "./IInsightFacade";
-import {InsightError, NotFoundError} from "./IInsightFacade";
-import * as JSZip from "jszip";
-import {SetUtils} from "../SetUtils";
-import {DataUtils} from "../DataUtils";
+import {IInsightFacade, InsightDataset, InsightDatasetKind, InsightError, ResultTooLargeError} from "./IInsightFacade";
+import {SetUtils} from "../utils/SetUtils";
 import {Datasets} from "../model/Datasets";
+import {JSONIOService} from "../service/JSONIOService";
+import Util from "../Util";
+import {QueryObject} from "../model/QueryObject";
+import {CourseIOService} from "../service/CourseIOService";
+import {RoomIOService} from "../service/RoomIOService";
+import {Operations} from "./Operations";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -18,78 +21,64 @@ export default class InsightFacade implements IInsightFacade {
         this.datasets = new Datasets();
     }
 
-    public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<string[]> {
-        if (!InsightFacade.isIdValid(id)) {
-            return Promise.reject(new InsightError("Field id format not valid"));
-        } else if (this.datasets.containsDataset(id)) {
-            return Promise.reject(new InsightError("Cannot add with duplicated id"));
-        } else if (kind !== InsightDatasetKind.Courses) {
-            return Promise.reject(new InsightError("Invalid or not implemented dataset kind"));
+    public addDataset(id: string, zip: string, kind: InsightDatasetKind): Promise<string[]> {
+        if (!Datasets.isIdValid(id) || this.datasets.containsDataset(id)) {
+            return Promise.reject(new InsightError("Invalid id"));
         }
 
-        const dataset: any[] = [];
-        return new Promise((resolve, reject) => {
-            // unzip string and read data to courseSets
-            JSZip.loadAsync(content, {base64: true}).then<JSZip>((zip) => {
-                return Promise.resolve(zip);
-            }).then<any[]>((zip) => {
-                return DataUtils.extractZip(zip);
-            }).then((courseLists) => {
-                for (const courseList of courseLists) {
-                    const temp: any[] = [];
-                    try {
-                        for (const result of courseList) {
-                            // add result to dataset
-                            temp.push(DataUtils.convertData(result));
-                        }
-                    } catch (err) { continue; }
-                    dataset.push(...temp);
-                }
+        // choose approximate service
+        let ioService: JSONIOService;
+        if (kind === InsightDatasetKind.Courses) {
+            ioService = new CourseIOService();
+        } else {
+            ioService = new RoomIOService();
+        }
 
-                if (dataset.length === 0) {
-                    return Promise.reject(new InsightError("The zip must contain at least one course"));
-                }
-                this.datasets.addDataset(id, dataset);
-                resolve(this.datasets.getIds());
-            }).catch((err) => reject(new InsightError(err.message)));
+        return ioService.getJSONData(zip).then((entries: any[]) => {
+            if (entries.length === 0) {
+                return Promise.reject(new InsightError("The zip must contain at least one elements"));
+            }
+
+            this.datasets.addDataset(id, entries);
+            return Promise.resolve(this.datasets.getIds());
+        }).catch((err) => {
+            throw new InsightError(err.message);
         });
     }
 
     public removeDataset(id: string): Promise<string> {
-        if (!InsightFacade.isIdValid(id)) {
+        if (!Datasets.isIdValid(id)) {
             return Promise.reject(new InsightError("Id format not right"));
         }
 
         const self = this;
-        return new Promise((resolve, reject) => {
+        return new Promise((rs, rj) => {
             try {
                 self.datasets.removeDataset(id);
-            } catch (err) { return reject(err); }
+            } catch (err) {
+                return rs(err);
+            }
 
-            resolve(id);
+            rj(id);
         });
     }
 
     public listDatasets(): Promise<InsightDataset[]> {
         const datasets = this.datasets;
-        return new Promise<InsightDataset[]>((resolve, reject) => {
-            const insightDatasets: InsightDataset[] = [];
-
-            for (const id of datasets.getIds()) {
+        return new Promise<InsightDataset[]>((resolve) => {
+            resolve(datasets.getIds().map((id) => {
                 // check dataset kind
                 let datasetKind = InsightDatasetKind.Rooms;
                 if (datasets.getDataset(id)[0].hasOwnProperty("dept")) {
                     datasetKind = InsightDatasetKind.Courses;
                 }
 
-                insightDatasets.push({
+                return {
                     id: id,
                     kind: datasetKind,
                     numRows: datasets.getDataset(id).length
-                });
-            }
-
-            resolve(insightDatasets);
+                };
+            }));
         });
     }
 
@@ -97,43 +86,31 @@ export default class InsightFacade implements IInsightFacade {
         const self = this;
         return new Promise<any>((resolve, reject) => {
             try {
-                if (!(Object.keys(query).length === 2)
-                    || !query.hasOwnProperty("OPTIONS")
-                    || !query.hasOwnProperty("WHERE")
-                ) {
-                    reject(new InsightError("JSON has more keys than excepted"));
-                }
+                const queryObj = new QueryObject(query, this.datasets.getIds());
 
                 // extract dataset id from query
-                const options = query["OPTIONS"];
-                const columns = options["COLUMNS"];
-                const id: string = columns[0].split("_")[0];
+                const columns = queryObj.columns_;
+                const id: string = queryObj.queryId_;
                 if (!self.datasets.containsDataset(id)) {
                     return reject(new InsightError("Dataset not exists"));
                 }
 
                 // find all the courses matching where
                 let courseSet: Set<number>;
-                const where = query["WHERE"];
-                if (typeof where !== "object" || where instanceof Array) {
-                    return reject(new InsightError("WHERE must be an object"));
-                } else if (Object.keys(where).length === 0) {
+                const where = queryObj.where_;
+                if (Object.keys(where).length === 0) {
                     courseSet = new Set(Array.from(Array(self.datasets.getDataset(id).length).keys()));
                 } else {
-                    courseSet = self.findCourses(where, id);
+                    courseSet = self.findEntries(where, id);
                 }
 
-                // select specific columns and add to results
+                // select specific columns and sort the results
                 let results = this.selectColumns(courseSet, columns, id);
-
-                // sort the columns
-                if (options.hasOwnProperty("ORDER")) {
-                    if (Object.keys(options).length > 2 || !columns.includes(options["ORDER"])) {
-                        return reject(new InsightError("Invalid columns with orders"));
-                    }
-                    results.sort((a, b) => InsightFacade.compareResults(a[options["ORDER"]], b[options["ORDER"]]));
-                } else if (Object.keys(options).length > 1) {
-                    return reject(new InsightError("Invalid key in column"));
+                const order = queryObj.order_;
+                if (order !== null) {
+                    results.sort((a, b) => {
+                        return Util.compareValues(a[order], b[order]);
+                    });
                 }
 
                 // resolve results
@@ -141,11 +118,13 @@ export default class InsightFacade implements IInsightFacade {
                     return reject(new ResultTooLargeError());
                 }
                 resolve(results);
-            } catch (err) { reject(new InsightError("Caught: " + err.message)); }
+            } catch (err) {
+                reject(new InsightError("Caught: " + err.message));
+            }
         });
     }
 
-    private findCourses(filter: any, id: string): Set<number> {
+    private findEntries(filter: any, id: string): Set<number> {
         const dataset = this.datasets.getDataset(id);
         const allCourses = new Set(Array.from(Array(dataset.length).keys()));
         if (!(Object.keys(filter).length === 1)) {
@@ -156,7 +135,7 @@ export default class InsightFacade implements IInsightFacade {
         if (filter[comparator] instanceof Array) {
             const subSets: Array<Set<number>> = [];
             for (const subFilter of filter[comparator]) {
-                subSets.push(this.findCourses(subFilter, id));
+                subSets.push(this.findEntries(subFilter, id));
             }
 
             if (subSets.length === 0) {
@@ -169,7 +148,7 @@ export default class InsightFacade implements IInsightFacade {
         } else {
             const filterContent = filter[comparator];
             if (comparator === "NOT") {
-                return SetUtils.complementary(this.findCourses(filterContent, id), allCourses);
+                return SetUtils.complementary(this.findEntries(filterContent, id), allCourses);
             }
 
             // filter courses
@@ -182,96 +161,96 @@ export default class InsightFacade implements IInsightFacade {
                 throw new InsightError("Invalid key format in filter content or query two datasets");
             }
             const datasetKey = contentKey.split("_")[1];
-            return InsightFacade.filterCourses(dataset, allCourses, datasetKey, contentValue, comparator);
+            return InsightFacade.filterEntries(dataset, allCourses, datasetKey, contentValue, comparator);
         }
 
         throw new InsightError("Invalid comparator when finding courses");
     }
 
-    private static filterCourses(
+    private static filterEntries(
         dataset: any[], allCourses: Set<number>, key: string, value: any, comparator: string
     ): Set<number> {
         if (!dataset[0].hasOwnProperty(key)) {
             throw new InsightError("Key in filter content not found in dataset");
         }
 
-        const mapping: any = {};
-        mapping["IS"] = ["string", (a: any, regex: any) => {
-            if (!regex.includes("*")) {
-                return a === regex;
-            } else if (!/^\*?[^\*]*\*?$/.test(regex)) {
-                throw new InsightError("Invalid regex filter value");
-            }
-            return new RegExp("^" + regex.split("*").join(".*") + "$").test(a);
-        }];
-        mapping["EQ"] = ["number", (a: any, b: any) => a === b];
-        mapping["LT"] = ["number", (a: any, b: any) => a < b];
-        mapping["GT"] = ["number", (a: any, b: any) => a > b];
-
-        if (mapping.hasOwnProperty(comparator)) {
-            const type = mapping[comparator][0];
-            if (typeof value !== type || typeof dataset[0][key] !== type) {
-                throw new InsightError("Filter content type not valid");
-            }
-
-            const comp = mapping[comparator][1];
-            return SetUtils.setFilter(allCourses, (course) => comp(dataset[course][key], value));
+        const ops = Operations.filterOps;
+        if (!ops.hasOwnProperty(comparator)) {
+            throw new InsightError("Invalid comparator");
         }
 
-        throw new InsightError("Invalid comparator");
+        const type = ops[comparator][0];
+        if (typeof value !== type || typeof dataset[0][key] !== type) {
+            throw new InsightError("Filter content type not valid");
+        }
+
+        const comp = ops[comparator][1];
+        return SetUtils.setFilter(allCourses, (course) => {
+            return comp(dataset[course][key], value);
+        });
     }
 
-    private selectColumns(courseSet: Set<number>, columns: any, id: string): any[] {
-        const results: any[] = new Array(0);
-
-        const temp: string[] = [];
+    private selectColumns(courseSet: Set<number>, columns: string[], id: string): any[] {
         for (const column of columns) {
-            if (!/^[^_]+_[^_]+$/.test(column)) {
-                throw new InsightError("Invalid key format in columns");
-            } else if (
-                column.split("_")[0] !== id
-                || !this.datasets.getDataset(id)[0].hasOwnProperty(column.split("_")[1])
-                || temp.includes(column)
-            ) {
+            if (!this.datasets.getDataset(id)[0].hasOwnProperty(column.split("_")[1])) {
                 throw new InsightError("Cannot query from two datasets or key does not exist");
             }
-            temp.push(column);
         }
-        for (const course of courseSet) {
+        return Array.from(courseSet.values()).map((idx) => {
             const result: any = {};
             for (const column of columns) {
-                result[column] = this.datasets.getDataset(id)[course][column.split("_")[1]];
+                result[column] = this.datasets.getDataset(id)[idx][column.split("_")[1]];
             }
-            results.push(result);
+            return result;
+        });
+    }
+
+    private applyTransformation(trans: any, entries: any[], id: string): any[] {
+        // extract group and apply
+        const groupCols = trans["GROUP"];
+
+        const groupMap: any = {};
+        let count = 0;
+        for (const entry of entries) {
+            const groupVal: string = groupCols.map((key: string) => {
+                return entry[key];
+            });
+
+            // assign group to entry and label it
+            if (groupMap[groupVal] === undefined) {
+                groupMap[groupVal] = count ++;
+            }
+            entry["group"] = groupMap[groupVal];
         }
+
+        const results: any[] = [];
+        const apply = trans["APPLY"];
+        for (const group of Object.values(groupMap)) {
+            // get entries for current group and delete label
+            const groupEntries = entries.filter((entry) => {
+                if (entry["group"] === group) {
+                    delete entry["group"];
+                    return true;
+                }
+                return false;
+            });
+
+            // calculate the overall value
+            results.push(...apply.reduce((temps: any[], rule: any) => {
+                const name: string = Object.keys(rule)[0];
+                const op: string = Object.keys(rule[name])[0];
+                const col: string = rule[name][op];
+                const overall = Operations.applyOps[op](temps.map((entry) => {
+                    return entry[col];
+                }));
+                return temps.map((entry) => {
+                    entry[name] = overall;
+                    return entry;
+                });
+            }, groupEntries));
+        }
+
         return results;
     }
 
-    private static compareResults(a: any, b: any): number {
-        if (typeof a === "string") {
-            for (let i = 0; i < Math.min(a.length, b.length); i ++) {
-                if (a.charCodeAt(i) !== b.charCodeAt(i)) {
-                    return a.charCodeAt(i) > b.charCodeAt(i) ? 1 : -1;
-                }
-            }
-            if (a.length === b.length) { return 0; }
-            return a.length > b.length ? 1 : -1;
-        }
-        if (a === b) { return 0; }
-        return a > b ? 1 : -1;
-    }
-
-    private static isIdValid(id: any): boolean {
-        if (!(typeof id === "string")) {
-            return false;
-        } else if (id.includes("_")) {
-            return false;
-        }
-        for (const c of id) {
-            if (c !== " ") {
-                return true;
-            }
-        }
-        return false;
-    }
 }

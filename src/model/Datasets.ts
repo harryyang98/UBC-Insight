@@ -22,9 +22,9 @@ export class Datasets {
     }
 
     public getDataset(id: string): any[] {
-        if (!this.containsDataset(id)) {
-            throw new InsightError("Dataset not found");
-        }
+        // if (!this.containsDataset(id)) {
+        //     throw new InsightError("Dataset not found");
+        // }
 
         this.loadDataset(id);
         return this.caches[id];
@@ -69,5 +69,19 @@ export class Datasets {
         }
 
         this.caches[id] = JSON.parse(fs.readFileSync(this.path + id, "utf-8"));
+    }
+
+    public static isIdValid(id: any): boolean {
+        if (!(typeof id === "string")) {
+            return false;
+        } else if (id.includes("_")) {
+            return false;
+        }
+        for (const c of id) {
+            if (c !== " ") {
+                return true;
+            }
+        }
+        return false;
     }
 }

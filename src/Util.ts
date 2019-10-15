@@ -4,6 +4,7 @@
  * Collection of logging methods. Useful for making the output easier to read and understand.
  */
 export default class Log {
+
     public static trace(...msg: any[]): void {
             console.log(`<T> ${new Date().toLocaleString()}:`, ...msg);
     }
@@ -23,4 +24,33 @@ export default class Log {
     public static test(...msg: any[]): void {
             console.log(`<X> ${new Date().toLocaleString()}:`, ...msg);
     }
+
+    public static compareValues(a: any, b: any): number {
+        if (typeof a === "string") {
+            for (let i = 0; i < Math.min(a.length, b.length); i ++) {
+                if (a.charCodeAt(i) !== b.charCodeAt(i)) {
+                    return a.charCodeAt(i) > b.charCodeAt(i) ? 1 : -1;
+                }
+            }
+            if (a.length === b.length) {
+                return 0;
+            }
+            return a.length > b.length ? 1 : -1;
+        }
+        if (a === b) {
+            return 0;
+        }
+        return a > b ? 1 : -1;
+    }
+
+    public static cartesianProduct(a: any[], b: any[]) {
+        const results = [];
+        for (const x of a) {
+            for (const y of b) {
+                results.push([x, y]);
+            }
+        }
+        return results;
+    }
+
 }
