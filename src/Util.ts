@@ -1,5 +1,7 @@
 /* tslint:disable:no-console */
 
+import {InsightError} from "./controller/IInsightFacade";
+
 /**
  * Collection of logging methods. Useful for making the output easier to read and understand.
  */
@@ -26,7 +28,9 @@ export default class Log {
     }
 
     public static compareValues(a: any, b: any): number {
-        if (typeof a === "string") {
+        if (a === undefined || b === undefined) {
+            throw new InsightError("Cannot compare undefined value");
+        } else if (typeof a === "string") {
             for (let i = 0; i < Math.min(a.length, b.length); i ++) {
                 if (a.charCodeAt(i) !== b.charCodeAt(i)) {
                     return a.charCodeAt(i) > b.charCodeAt(i) ? 1 : -1;

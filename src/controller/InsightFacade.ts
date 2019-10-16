@@ -104,20 +104,29 @@ export default class InsightFacade implements IInsightFacade {
                     courseSet = self.findEntries(where, id);
                 }
 
-                // select specific columns and sort the results
+                // select specific columns
                 let results = this.selectColumns(courseSet, columns, id);
-                const order = queryObj.order_;
-                if (order !== null) {
+
+                // apply transformation to columns
+                if (queryObj.groupCols_ !== null) {
+                    self.applyTransformation(queryObj.groupCols_, queryObj.apply_, results, id);
+                }
+
+                // sort the results
+                const orderKeys: string[] = queryObj.orderKeys_;
+                const dirCoefficient: number = (queryObj.isDirUp_ ? 1 : 0) * 2 - 1;
+                if (orderKeys.length > 0) {
                     results.sort((a, b) => {
-                        return Util.compareValues(a[order], b[order]);
+                        return dirCoefficient * orderKeys.map((key) => {
+                            return Util.compareValues(a[key], b[key]);
+                        }).reduce((c1, c2) => {
+                            return c1 !== 0 ? c1 : c2;
+                        });
                     });
                 }
 
                 // resolve results
-                if (results.length > 5000) {
-                    return reject(new ResultTooLargeError());
-                }
-                resolve(results);
+                results.length > 5000 ? reject(new ResultTooLargeError()) : resolve(results);
             } catch (err) {
                 reject(new InsightError("Caught: " + err.message));
             }
@@ -205,18 +214,15 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
-    private applyTransformation(trans: any, entries: any[], id: string): any[] {
-        // extract group and apply
-        const groupCols = trans["GROUP"];
-
+    private applyTransformation(groupCols: string[], apply: any, entries: any[], id: string): any[] {
+        // assign group to entry and label it
         const groupMap: any = {};
         let count = 0;
         for (const entry of entries) {
             const groupVal: string = groupCols.map((key: string) => {
                 return entry[key];
-            });
+            }).toString();
 
-            // assign group to entry and label it
             if (groupMap[groupVal] === undefined) {
                 groupMap[groupVal] = count ++;
             }
@@ -224,7 +230,6 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         const results: any[] = [];
-        const apply = trans["APPLY"];
         for (const group of Object.values(groupMap)) {
             // get entries for current group and delete label
             const groupEntries = entries.filter((entry) => {

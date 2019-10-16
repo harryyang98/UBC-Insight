@@ -1,8 +1,4 @@
 import * as JSZip from "jszip";
-import {InsightDatasetKind, InsightError} from "../controller/IInsightFacade";
-import {DataUtils} from "../utils/DataUtils";
-import Log from "../Util";
-import {ParsedPath} from "path";
 
 export abstract class JSONIOService {
 
