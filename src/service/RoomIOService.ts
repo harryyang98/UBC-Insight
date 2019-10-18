@@ -68,7 +68,7 @@ export class RoomIOService extends JSONIOService {
                         return {
                             number: num,
                             name: building.shortname + "_" + num,
-                            seat: parseInt(RoomIOService.extractText(room.childNodes[3]), 10),
+                            seats: parseInt(RoomIOService.extractText(room.childNodes[3]), 10),
                             type: RoomIOService.extractText(room.childNodes[7]),
                             furniture: RoomIOService.extractText(room.childNodes[5]),
                             href: room.childNodes[9].childNodes[1].attrs[0].value.trim()
@@ -87,6 +87,7 @@ export class RoomIOService extends JSONIOService {
         }));
     }
 
+    // TODO: should not only find one table
     private static findTableEntries(document: any): any {
         if (document.nodeName.includes("tbody")) {
             return document;

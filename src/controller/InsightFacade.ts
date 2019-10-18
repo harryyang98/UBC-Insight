@@ -11,7 +11,6 @@ import {Operations} from "./Operations";
 /**
  * This is the main programmatic entry point for the project.
  * Method documentation is in IInsightFacade
- *
  */
 export default class InsightFacade implements IInsightFacade {
 
@@ -96,27 +95,30 @@ export default class InsightFacade implements IInsightFacade {
                 }
 
                 // find all the courses matching where
-                let courseSet: Set<number>;
+                let entrySet: Set<number>;
                 const where = queryObj.where_;
                 if (Object.keys(where).length === 0) {
-                    courseSet = new Set(Array.from(Array(self.datasets.getDataset(id).length).keys()));
+                    entrySet = new Set(Array.from(Array(self.datasets.getDataset(id).length).keys()));
                 } else {
-                    courseSet = self.findEntries(where, id);
+                    entrySet = self.findEntrySets(where, id);
                 }
 
-                // select specific columns
-                let results = this.selectColumns(courseSet, columns, id);
+                // get all entries in dataset
+                let entries = self.getEntries(entrySet, id);
 
                 // apply transformation to columns
                 if (queryObj.groupCols_ !== null) {
-                    self.applyTransformation(queryObj.groupCols_, queryObj.apply_, results, id);
+                    entries = self.applyTransformation(queryObj.groupCols_, queryObj.apply_, entries, id);
                 }
+
+                // select the certain columns required
+                entries = self.selectColumns(entries, columns);
 
                 // sort the results
                 const orderKeys: string[] = queryObj.orderKeys_;
                 const dirCoefficient: number = (queryObj.isDirUp_ ? 1 : 0) * 2 - 1;
                 if (orderKeys.length > 0) {
-                    results.sort((a, b) => {
+                    entries.sort((a, b) => {
                         return dirCoefficient * orderKeys.map((key) => {
                             return Util.compareValues(a[key], b[key]);
                         }).reduce((c1, c2) => {
@@ -126,14 +128,14 @@ export default class InsightFacade implements IInsightFacade {
                 }
 
                 // resolve results
-                results.length > 5000 ? reject(new ResultTooLargeError()) : resolve(results);
+                entries.length > 5000 ? reject(new ResultTooLargeError()) : resolve(entries);
             } catch (err) {
                 reject(new InsightError("Caught: " + err.message));
             }
         });
     }
 
-    private findEntries(filter: any, id: string): Set<number> {
+    private findEntrySets(filter: any, id: string): Set<number> {
         const dataset = this.datasets.getDataset(id);
         const allCourses = new Set(Array.from(Array(dataset.length).keys()));
         if (!(Object.keys(filter).length === 1)) {
@@ -144,7 +146,7 @@ export default class InsightFacade implements IInsightFacade {
         if (filter[comparator] instanceof Array) {
             const subSets: Array<Set<number>> = [];
             for (const subFilter of filter[comparator]) {
-                subSets.push(this.findEntries(subFilter, id));
+                subSets.push(this.findEntrySets(subFilter, id));
             }
 
             if (subSets.length === 0) {
@@ -157,7 +159,7 @@ export default class InsightFacade implements IInsightFacade {
         } else {
             const filterContent = filter[comparator];
             if (comparator === "NOT") {
-                return SetUtils.complementary(this.findEntries(filterContent, id), allCourses);
+                return SetUtils.complementary(this.findEntrySets(filterContent, id), allCourses);
             }
 
             // filter courses
@@ -199,16 +201,25 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
-    private selectColumns(courseSet: Set<number>, columns: string[], id: string): any[] {
-        for (const column of columns) {
-            if (!this.datasets.getDataset(id)[0].hasOwnProperty(column.split("_")[1])) {
-                throw new InsightError("Cannot query from two datasets or key does not exist");
+    private getEntries(entrySet: Set<number>, id: string): any[] {
+        const dataset = this.datasets.getDataset(id);
+        return Array.from(entrySet.values()).map((idx) => {
+            const entry: any = {};
+            for (const key in dataset[idx]) {
+                entry[id + "_" + key] = dataset[idx][key];
             }
-        }
-        return Array.from(courseSet.values()).map((idx) => {
+            return entry;
+        });
+    }
+
+    private selectColumns(entries: any[], columns: string[]): any[] {
+        return entries.map((entry) => {
             const result: any = {};
             for (const column of columns) {
-                result[column] = this.datasets.getDataset(id)[idx][column.split("_")[1]];
+                if (!Object.keys(entry).includes(column) && column.includes("_")) {
+                    throw new InsightError("Invalid column");
+                }
+                result[column] = entry[column];
             }
             return result;
         });

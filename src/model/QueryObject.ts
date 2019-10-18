@@ -6,7 +6,7 @@ export class QueryObject {
     private columns: string[];
     private orderKeys: string[];
     private queryId: string;
-    private datasetIds: string[];
+    // private datasetIds: string[];
     private isDirUp: boolean;
     private groupCols: string[];
     private apply: any;
@@ -40,7 +40,7 @@ export class QueryObject {
     }
 
     constructor(query: any, datasetIds: string[]) {
-        this.datasetIds = datasetIds;
+        // this.datasetIds = datasetIds;
         this.orderKeys = [];
 
         QueryObject.assertObjectByKeysWithOption(query, ["OPTIONS", "WHERE"], "TRANSFORMATIONS");
@@ -71,17 +71,16 @@ export class QueryObject {
                 throw new InsightError("Dir value not valid");
             }
         }
+        this.columns = options["COLUMNS"];
+        for (const orderKey of this.orderKeys) {
+            if (!this.columns.includes(orderKey)) {
+                throw new InsightError("Order key must be found in columns");
+            }
+        }
 
         // check columns
-        this.columns = options["COLUMNS"];
         QueryObject.assertArray(this.columns, false);
         this.queryId = this.columns[0].split("_")[0];
-        this.columns.forEach((c) => {
-            this.assertKeyValid(c);
-            if (this.queryId !== c.split("_")[0]) {
-                throw new InsightError("Cannot query from two datasets");
-            }
-        });
 
         // check group columns
         const trans = query["TRANSFORMATIONS"];
@@ -133,24 +132,24 @@ export class QueryObject {
         }
     }
 
-    private static assertString(str: any): string {
-        if (!(typeof str === "string")) {
-            throw new InsightError("Field should be string");
-        }
-        return str;
-    }
-
-    private assertKeyValid(key: string) {
-        if (!/^[^_]+_[^_]+$/.test(key)) {
-            throw new InsightError("Format of key not right");
-        } else if (!this.datasetIds.includes(key.split("_")[0])) {
-            throw new InsightError("Dataset not exists");
-        }
-    }
-
-    private static assertRegexValid(regex: string) {
-        if (!/^\*?[^\*]*\*?$/.test(regex)) {
-            throw new InsightError("WildCard format not right");
-        }
-    }
+    // private static assertString(str: any): string {
+    //     if (!(typeof str === "string")) {
+    //         throw new InsightError("Field should be string");
+    //     }
+    //     return str;
+    // }
+    //
+    // private assertKeyValid(key: string) {
+    //     if (!/^[^_]+_[^_]+$/.test(key)) {
+    //         throw new InsightError("Format of key not right");
+    //     } else if (!this.datasetIds.includes(key.split("_")[0])) {
+    //         throw new InsightError("Dataset not exists");
+    //     }
+    // }
+    //
+    // private static assertRegexValid(regex: string) {
+    //     if (!/^\*?[^\*]*\*?$/.test(regex)) {
+    //         throw new InsightError("WildCard format not right");
+    //     }
+    // }
 }

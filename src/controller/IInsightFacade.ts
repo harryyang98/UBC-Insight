@@ -4,6 +4,11 @@
  * You should not change this interface at all or the test suite will not work.
  */
 
+// for (const key of Object.keys(options["COLUMNS"])) {
+//     if (InsightFacade.toComp(a[key]) !== InsightFacade.toComp(b[key])) {
+//         return InsightFacade.toComp(a[key]) < InsightFacade.toComp(b[key]) ? -1 : 1;
+//     }
+// }
 export enum InsightDatasetKind {
     Courses = "courses",
     Rooms = "rooms",
