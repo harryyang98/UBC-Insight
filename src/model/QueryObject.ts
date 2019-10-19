@@ -76,20 +76,8 @@ export class QueryObject {
         // check columns
         QueryObject.assertArray(this.columns, false);
 
-        // check group columns
-        const trans = query["TRANSFORMATIONS"];
-        this.groupCols = null;
-        this.apply = null;
-        if (trans !== undefined) {
-            this.groupCols = trans["GROUP"];
-            this.apply = trans["APPLY"];
-            // all columns should be found in group
-            for (const column of this.columns) {
-                if (!this.groupCols.includes(column) && column.includes("_")) {
-                    throw new InsightError("Column must be able to be found in group");
-                }
-            }
-        }
+        // check transformations
+        this.assertTransformations(query["TRANSFORMATIONS"]);
     }
 
     public getId(): string {
@@ -104,11 +92,32 @@ export class QueryObject {
         return temp.split("_")[0];
     }
 
-    // private static assertType(val: any, type: string) {
-    //     if (!(typeof val === type)) {
-    //         throw new InsightError("Value Type mismatch");
-    //     }
-    // }
+    private assertTransformations(trans: any) {
+        this.groupCols = null;
+        this.apply = null;
+        if (trans !== undefined) {
+            this.groupCols = trans["GROUP"];
+            QueryObject.assertArray(this.groupCols, false);
+            this.apply = trans["APPLY"];
+            QueryObject.assertArray(this.apply, false);
+
+            // apply keys should not contain _ and every sub objects should have one column
+            for (const app of this.apply) {
+                QueryObject.assertObjectByLength(app, 1);
+                QueryObject.assertObjectByLength(app[Object.keys(app)[0]], 1);
+                if (Object.keys(app)[0].includes("_")) {
+                    throw new InsightError("Apply key should not contain _");
+                }
+            }
+
+            // all columns should be found in group
+            for (const column of this.columns) {
+                if (!this.groupCols.includes(column) && column.includes("_")) {
+                    throw new InsightError("Column must be able to be found in group");
+                }
+            }
+        }
+    }
 
     private static assertObjectByKeys(obj: any, keys: string[]) {
         if (!(Object.keys(obj).length === keys.length)) {

@@ -1,0 +1,19 @@
+{
+    "title": "Very invalid query",
+    "query": {
+        "WHERE": {
+            "NOT": {"OR": [{"IS": {"courses_id": "*2*"}}, {"GT": {"courses_avg": 60}}]}
+        },
+        "OPTIONS": {
+            "COLUMNS": [
+                "courses_instructor"
+            ]
+        },
+        "TRANSFORMATIONS": {
+            "GROUP": ["courses_instructor"],
+            "APPLY": []
+        }
+    },
+    "isQueryValid": false,
+    "result": "InsightError"
+}

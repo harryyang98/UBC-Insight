@@ -1,7 +1,7 @@
 {"query":
 {
     "WHERE": {
-        "GT": { "courses_avg": 70 }
+        "GT": { "courses_avg": 96 }
     },
     "OPTIONS": {
         "COLUMNS": ["courses_title", "overallAvg"]

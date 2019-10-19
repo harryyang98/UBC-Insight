@@ -41,7 +41,13 @@ export class Operations {
             return Math.min(...x);
         },
         COUNT: (x: any[]) => {
-            return x.length;
+            const temp: any[] = [];
+            for (const t of x) {
+                if (!temp.includes(t)) {
+                    temp.push(t);
+                }
+            }
+            return temp.length;
         }
     };
 

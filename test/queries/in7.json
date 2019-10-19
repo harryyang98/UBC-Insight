@@ -1,0 +1,33 @@
+{
+    "title": "Very invalid query",
+    "query": {
+        "WHERE": {
+            "NOT": {"OR": [{"IS": {"courses_id": "*2*"}}, {"GT": {"courses_avg": 60}}]}
+        },
+        "OPTIONS": {
+            "ORDER": {
+                "dir": "UP",
+                "keys": ["ccgg"]
+            },
+            "COLUMNS": [
+                "avgzhazha",
+                "ccgg"
+            ]
+        },
+        "TRANSFORMATIONS": {
+            "GROUP": ["courses_instructor"],
+            "APPLY": [{
+                "avgzhazha": {
+                    "AVG": "courses_avg"
+                }
+            }, {
+                "ccgg": {
+                    "MAX": "courses_year",
+                    "AVG": "courses_year"
+                }
+            }]
+        }
+    },
+    "isQueryValid": false,
+    "result": "InsightError"
+}
