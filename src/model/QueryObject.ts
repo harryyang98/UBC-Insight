@@ -5,11 +5,10 @@ export class QueryObject {
     private where: any;
     private columns: string[];
     private orderKeys: string[];
-    private queryId: string;
     // private datasetIds: string[];
     private isDirUp: boolean;
     private groupCols: string[];
-    private apply: any;
+    private apply: any[];
 
     public get where_(): any {
         return this.where;
@@ -25,10 +24,6 @@ export class QueryObject {
 
     public get isDirUp_(): boolean {
         return this.isDirUp;
-    }
-
-    public get queryId_(): string {
-        return this.queryId;
     }
 
     public get groupCols_(): string[] {
@@ -80,7 +75,6 @@ export class QueryObject {
 
         // check columns
         QueryObject.assertArray(this.columns, false);
-        this.queryId = this.columns[0].split("_")[0];
 
         // check group columns
         const trans = query["TRANSFORMATIONS"];
@@ -89,14 +83,32 @@ export class QueryObject {
         if (trans !== undefined) {
             this.groupCols = trans["GROUP"];
             this.apply = trans["APPLY"];
+            // all columns should be found in group
+            for (const column of this.columns) {
+                if (!this.groupCols.includes(column)) {
+                    throw new InsightError("Column must be able to be found in group");
+                }
+            }
         }
     }
 
-    private static assertType(val: any, type: string) {
-        if (!(typeof val === type)) {
-            throw new InsightError("Value Type mismatch");
+    public getId(): string {
+        for (const column of this.columns) {
+            if (column.includes("_")) {
+                return column.split("_")[0];
+            }
         }
+        const app = this.apply[0];
+        let temp = app[Object.keys(app)[0]];
+        temp = temp[Object.keys(temp)[0]];
+        return temp.split("_")[0];
     }
+
+    // private static assertType(val: any, type: string) {
+    //     if (!(typeof val === type)) {
+    //         throw new InsightError("Value Type mismatch");
+    //     }
+    // }
 
     private static assertObjectByKeys(obj: any, keys: string[]) {
         if (!(Object.keys(obj).length === keys.length)) {

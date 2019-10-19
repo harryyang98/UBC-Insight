@@ -1,4 +1,5 @@
 import {InsightError} from "./IInsightFacade";
+import {Decimal} from "decimal.js";
 
 export class Operations {
 
@@ -24,14 +25,14 @@ export class Operations {
 
     public static readonly applyOps: any = {
         SUM: (x: number[]) => {
-            return x.reduce((a: number, b: number) => {
+            return Number((x.reduce((a: number, b: number) => {
                 return a + b;
-            });
+            })).toFixed(2));
         },
         AVG: (x: number[]) => {
-            return x.reduce((a: number, b: number) => {
-                return a + b;
-            }) / x.length;
+            return Number((x.reduce((a: Decimal, b: number) => {
+                return a.add(new Decimal(b));
+            }, new Decimal(0)).toNumber() / x.length).toFixed(2));
         },
         MAX: (x: number[]) => {
             return Math.max(...x);

@@ -89,7 +89,7 @@ export default class InsightFacade implements IInsightFacade {
 
                 // extract dataset id from query
                 const columns = queryObj.columns_;
-                const id: string = queryObj.queryId_;
+                const id: string = queryObj.getId();
                 if (!self.datasets.containsDataset(id)) {
                     return reject(new InsightError("Dataset not exists"));
                 }
@@ -251,11 +251,14 @@ export default class InsightFacade implements IInsightFacade {
                 return false;
             });
 
-            // calculate the overall value
+            // calculate the overall values
             results.push(...apply.reduce((temps: any[], rule: any) => {
                 const name: string = Object.keys(rule)[0];
                 const op: string = Object.keys(rule[name])[0];
                 const col: string = rule[name][op];
+                if (op !== "COUNT" && typeof temps[0][col] !== "number") {
+                    throw new InsightError("Cannot apply this op on non-number value");
+                }
                 const overall = Operations.applyOps[op](temps.map((entry) => {
                     return entry[col];
                 }));
