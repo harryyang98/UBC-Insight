@@ -85,7 +85,7 @@ export class QueryObject {
             this.apply = trans["APPLY"];
             // all columns should be found in group
             for (const column of this.columns) {
-                if (!this.groupCols.includes(column)) {
+                if (!this.groupCols.includes(column) && column.includes("_")) {
                     throw new InsightError("Column must be able to be found in group");
                 }
             }
