@@ -240,8 +240,7 @@ export default class InsightFacade implements IInsightFacade {
             entry["group"] = groupMap[groupVal];
         }
 
-        const results: any[] = [];
-        for (const group of Object.values(groupMap)) {
+        return Object.values(groupMap).map((group) => {
             // get entries for current group and delete label
             const groupEntries = entries.filter((entry) => {
                 if (entry["group"] === group) {
@@ -251,25 +250,21 @@ export default class InsightFacade implements IInsightFacade {
                 return false;
             });
 
-            // calculate the overall values
-            results.push(...apply.reduce((temps: any[], rule: any) => {
+            return apply.reduce((temp: any, rule: any) => {
                 const name: string = Object.keys(rule)[0];
                 const op: string = Object.keys(rule[name])[0];
                 const col: string = rule[name][op];
-                if (op !== "COUNT" && typeof temps[0][col] !== "number") {
+
+                // calculate the overall value
+                if (op !== "COUNT" && typeof temp[col] !== "number") {
                     throw new InsightError("Cannot apply this op on non-number value");
                 }
-                const overall = Operations.applyOps[op](temps.map((entry) => {
+                temp[name] = Operations.applyOps[op](groupEntries.map((entry) => {
                     return entry[col];
                 }));
-                return temps.map((entry) => {
-                    entry[name] = overall;
-                    return entry;
-                });
-            }, groupEntries));
-        }
-
-        return results;
+                return temp;
+            }, groupEntries[0]);
+        });
     }
 
 }
