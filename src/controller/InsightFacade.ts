@@ -7,6 +7,7 @@ import {QueryObject} from "../model/QueryObject";
 import {CourseIOService} from "../service/CourseIOService";
 import {RoomIOService} from "../service/RoomIOService";
 import {Operations} from "./Operations";
+import {AssertionUtils} from "../utils/AssertionUtils";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -55,10 +56,9 @@ export default class InsightFacade implements IInsightFacade {
             try {
                 self.datasets.removeDataset(id);
             } catch (err) {
-                return rs(err);
+                return rj(err);
             }
-
-            rj(id);
+            rs(id);
         });
     }
 
@@ -98,7 +98,7 @@ export default class InsightFacade implements IInsightFacade {
                 let entrySet: Set<number>;
                 const where = queryObj.where_;
                 if (Object.keys(where).length === 0) {
-                    entrySet = new Set(Array.from(Array(self.datasets.getDataset(id).length).keys()));
+                    entrySet = SetUtils.makeIdxSet(self.datasets.getDataset(id).length);
                 } else {
                     entrySet = self.findEntrySets(where, id);
                 }
@@ -115,11 +115,10 @@ export default class InsightFacade implements IInsightFacade {
                 entries = self.selectColumns(entries, columns);
 
                 // sort the results
-                const orderKeys: string[] = queryObj.orderKeys_;
                 const dirCoefficient: number = (queryObj.isDirUp_ ? 1 : 0) * 2 - 1;
-                if (orderKeys.length > 0) {
+                if (queryObj.orderKeys_.length > 0) {
                     entries.sort((a, b) => {
-                        return dirCoefficient * orderKeys.map((key) => {
+                        return dirCoefficient * queryObj.orderKeys_.map((key) => {
                             return Util.compareValues(a[key], b[key]);
                         }).reduce((c1, c2) => {
                             return c1 !== 0 ? c1 : c2;
@@ -137,10 +136,8 @@ export default class InsightFacade implements IInsightFacade {
 
     private findEntrySets(filter: any, id: string): Set<number> {
         const dataset = this.datasets.getDataset(id);
-        const allCourses = new Set(Array.from(Array(dataset.length).keys()));
-        if (!(Object.keys(filter).length === 1)) {
-            throw new InsightError("There cannot be more than one or no objects in filter");
-        }
+        const allCourses = SetUtils.makeIdxSet(dataset.length);
+        AssertionUtils.assertObjectByLength(filter, 1);
 
         const comparator: string = Object.keys(filter)[0];
         if (filter[comparator] instanceof Array) {
@@ -149,9 +146,8 @@ export default class InsightFacade implements IInsightFacade {
                 subSets.push(this.findEntrySets(subFilter, id));
             }
 
-            if (subSets.length === 0) {
-                throw new InsightError("AND and OR must have at least one element");
-            } else if (comparator === "OR") {
+            AssertionUtils.assertArray(subSets, false);
+            if (comparator === "OR") {
                 return SetUtils.union(subSets);
             } else if (comparator === "AND") {
                 return SetUtils.intersecion(subSets);
@@ -163,9 +159,7 @@ export default class InsightFacade implements IInsightFacade {
             }
 
             // filter courses
-            if (!(Object.keys(filterContent).length === 1)) {
-                throw new InsightError("Filter content should have one and only one key");
-            }
+            AssertionUtils.assertObjectByLength(filterContent, 1);
             const contentKey = Object.keys(filterContent)[0];
             const contentValue = filterContent[contentKey];
             if (!/^[^_]+_[^_]+$/.test(contentKey) || contentKey.split("_")[0] !== id) {
@@ -191,9 +185,8 @@ export default class InsightFacade implements IInsightFacade {
         }
 
         const type = ops[comparator][0];
-        if (typeof value !== type || typeof dataset[0][key] !== type) {
-            throw new InsightError("Filter content type not valid");
-        }
+        AssertionUtils.assertType(value, type);
+        AssertionUtils.assertType(dataset[0][key], type);
 
         const comp = ops[comparator][1];
         return SetUtils.setFilter(allCourses, (course) => {
@@ -225,7 +218,7 @@ export default class InsightFacade implements IInsightFacade {
         });
     }
 
-    private applyTransformation(groupCols: string[], apply: any, entries: any[], id: string): any[] {
+    private applyTransformation(groupCols: string[], applies: any, entries: any[], id: string): any[] {
         // assign group to entry and label it
         const groupMap: any = {};
         let count = 0;
@@ -250,14 +243,16 @@ export default class InsightFacade implements IInsightFacade {
                 return false;
             });
 
-            return apply.reduce((temp: any, rule: any) => {
+            return applies.reduce((temp: any, rule: any) => {
                 const name: string = Object.keys(rule)[0];
                 const op: string = Object.keys(rule[name])[0];
                 const col: string = rule[name][op];
 
                 // calculate the overall value
-                if (op !== "COUNT" && typeof temp[col] !== "number") {
-                    throw new InsightError("Cannot apply this op on non-number value");
+                if (!col.includes("_")) {
+                    throw new InsightError("Cannot apply another apply column");
+                } else if (op !== "COUNT") {
+                    AssertionUtils.assertType(temp[col], "number");
                 }
                 temp[name] = Operations.applyOps[op](groupEntries.map((entry) => {
                     return entry[col];

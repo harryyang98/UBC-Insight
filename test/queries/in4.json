@@ -2,18 +2,23 @@
     "title": "Very invalid query",
     "query": {
         "WHERE": {
-            "NOT": {"OR": [{"IS": {"courses_id": "*2*"}}, {"GT": {"courses_avg": 60}}]}
+            "GT": { "courses_avg": 96 }
         },
         "OPTIONS": {
-            "COLUMNS": [
-                "courses_instructor"
-            ]
+            "COLUMNS": ["courses_title", "aa", "bb"]
         },
         "TRANSFORMATIONS": {
-            "GROUP": ["courses_instructor"],
-            "APPLY": []
+            "GROUP": ["courses_title"],
+            "APPLY": [{
+                "aa": {
+                    "AVG": "courses_avg"
+                }
+            }, {
+                "bb": {
+                    "SUM": "aa"
+                }
+            }]
         }
     },
     "isQueryValid": false,
-    "result": "InsightError"
-}
+    "result": "InsightError"}

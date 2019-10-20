@@ -40,4 +40,8 @@ export class SetUtils {
         return n;
     }
 
+    public static makeIdxSet(length: number) {
+        return new Set(Array.from(Array(length).keys()));
+    }
+
 }
