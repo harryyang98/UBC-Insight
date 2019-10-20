@@ -249,8 +249,8 @@ export default class InsightFacade implements IInsightFacade {
                 const col: string = rule[name][op];
 
                 // calculate the overall value
-                if (!col.includes("_")) {
-                    throw new InsightError("Cannot apply another apply column");
+                if (!col.includes("_") || !Object.keys(temp).includes(col)) {
+                    throw new InsightError("Invalid apply key");
                 } else if (op !== "COUNT") {
                     AssertionUtils.assertType(temp[col], "number");
                 }
