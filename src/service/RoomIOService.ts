@@ -98,7 +98,7 @@ export class RoomIOService extends JSONIOService {
                     if (sub instanceof Array) {
                         return sub;
                     }
-                    results.push(sub.childNodes.filter((n: any) => {
+                    results.push(...sub.childNodes.filter((n: any) => {
                         return n.nodeName.includes("tr");
                     }));
                 }
