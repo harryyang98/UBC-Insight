@@ -87,26 +87,20 @@ export class RoomIOService extends JSONIOService {
         }));
     }
 
-    private static findTableEntries(document: any): any {
+    private static findTableEntries(document: any): any[] {
+        const self = this;
         if (document.nodeName.includes("tbody")) {
-            return document;
+            return document.childNodes.filter((n: any) => {
+                return n.nodeName.includes("tr");
+            });
         } else if (document.hasOwnProperty("childNodes")) {
-            const results: any[] = [];
-            for (const node of document.childNodes) {
-                const sub = this.findTableEntries(node);
-                if (sub !== false) {
-                    if (sub instanceof Array) {
-                        return sub;
-                    }
-                    results.push(...sub.childNodes.filter((n: any) => {
-                        return n.nodeName.includes("tr");
-                    }));
-                }
-            }
-            return results;
+            return document.childNodes.reduce((rows: any[], child: any) => {
+                rows.push(...self.findTableEntries(child));
+                return rows;
+            }, []);
         }
 
-        return false;
+        return [];
     }
 
     private static extractText(node: any): string {
