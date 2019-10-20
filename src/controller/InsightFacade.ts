@@ -209,7 +209,7 @@ export default class InsightFacade implements IInsightFacade {
         return entries.map((entry) => {
             const result: any = {};
             for (const column of columns) {
-                if (!Object.keys(entry).includes(column) && column.includes("_")) {
+                if (!entry.hasOwnProperty(column)) {
                     throw new InsightError("Invalid column");
                 }
                 result[column] = entry[column];
@@ -223,14 +223,14 @@ export default class InsightFacade implements IInsightFacade {
         const groupMap: any = {};
         let count = 0;
         for (const entry of entries) {
-            const groupVal: string = groupCols.map((key: string) => {
+            const groupKey: string = groupCols.map((key: string) => {
                 return entry[key];
             }).toString();
 
-            if (groupMap[groupVal] === undefined) {
-                groupMap[groupVal] = count ++;
+            if (groupMap[groupKey] === undefined) {
+                groupMap[groupKey] = count ++;
             }
-            entry["group"] = groupMap[groupVal];
+            entry["group"] = groupMap[groupKey];
         }
 
         return Object.values(groupMap).map((group) => {

@@ -1,0 +1,25 @@
+{
+    "title": "Very invalid query",
+    "query": {
+        "WHERE": {
+            "GT": { "courses_avg": 96 }
+        },
+        "OPTIONS": {
+            "COLUMNS": ["courses_title", "overallAvg", "zhazha"],
+            "ORDER": {
+                "dir": "DOWN",
+                "keys": ["courses_title"]
+            }
+        },
+        "TRANSFORMATIONS": {
+            "GROUP": ["courses_title"],
+            "APPLY": [{
+                "overallAvg": {
+                    "AVG": "courses_avg"
+                }
+            }]
+        }
+    },
+    "isQueryValid": false,
+    "result": "InsightError"
+}
