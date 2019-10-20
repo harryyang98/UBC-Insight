@@ -77,7 +77,7 @@ export class QueryObject {
         QueryObject.assertArray(this.columns, false);
 
         // check transformations
-        this.assertTransformations(query["TRANSFORMATIONS"]);
+        this.setupTransformations(query["TRANSFORMATIONS"]);
     }
 
     public getId(): string {
@@ -92,22 +92,28 @@ export class QueryObject {
         return temp.split("_")[0];
     }
 
-    private assertTransformations(trans: any) {
+    private setupTransformations(trans: any) {
         this.groupCols = null;
         this.apply = null;
         if (trans !== undefined) {
+            QueryObject.assertObjectByKeys(trans, ["GROUP", "APPLY"]);
             this.groupCols = trans["GROUP"];
             QueryObject.assertArray(this.groupCols, false);
             this.apply = trans["APPLY"];
             QueryObject.assertArray(this.apply, false);
 
             // apply keys should not contain _ and every sub objects should have one column
+            const applyKeys: string[] = [];
             for (const app of this.apply) {
                 QueryObject.assertObjectByLength(app, 1);
-                QueryObject.assertObjectByLength(app[Object.keys(app)[0]], 1);
-                if (Object.keys(app)[0].includes("_")) {
-                    throw new InsightError("Apply key should not contain _");
+                const applyKey = Object.keys(app)[0];
+                QueryObject.assertObjectByLength(app[applyKey], 1);
+                if (applyKey.includes("_") || applyKey.length === 0) {
+                    throw new InsightError("Apply key format invalid");
+                } else if (applyKeys.includes(applyKey)) {
+                    throw new InsightError("Duplicated apply keys");
                 }
+                applyKeys.push(applyKey);
             }
 
             // all columns should be found in group

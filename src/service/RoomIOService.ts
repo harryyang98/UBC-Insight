@@ -87,22 +87,23 @@ export class RoomIOService extends JSONIOService {
         }));
     }
 
-    // TODO: should not only find one table
     private static findTableEntries(document: any): any {
         if (document.nodeName.includes("tbody")) {
             return document;
         } else if (document.hasOwnProperty("childNodes")) {
+            const results: any[] = [];
             for (const node of document.childNodes) {
                 const sub = this.findTableEntries(node);
                 if (sub !== false) {
                     if (sub instanceof Array) {
                         return sub;
                     }
-                    return sub.childNodes.filter((n: any) => {
+                    results.push(sub.childNodes.filter((n: any) => {
                         return n.nodeName.includes("tr");
-                    });
+                    }));
                 }
             }
+            return results;
         }
 
         return false;
