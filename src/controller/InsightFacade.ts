@@ -224,6 +224,9 @@ export default class InsightFacade implements IInsightFacade {
         let count = 0;
         for (const entry of entries) {
             const groupKey: string = groupCols.map((key: string) => {
+                if (entry[key] === undefined) {
+                    throw new InsightError("Group key not valid");
+                }
                 return entry[key];
             }).toString();
 
