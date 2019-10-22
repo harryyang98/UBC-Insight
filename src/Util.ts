@@ -1,6 +1,7 @@
 /* tslint:disable:no-console */
 
 import {InsightError} from "./controller/IInsightFacade";
+import {AssertionUtils} from "./utils/AssertionUtils";
 
 /**
  * Collection of logging methods. Useful for making the output easier to read and understand.
@@ -28,9 +29,9 @@ export default class Log {
     }
 
     public static compareValues(a: any, b: any): number {
-        if (a === undefined || b === undefined) {
-            throw new InsightError("Cannot compare undefined value");
-        } else if (typeof a === "string") {
+        AssertionUtils.assertDefined(a);
+        AssertionUtils.assertDefined(b);
+        if (typeof a === "string") {
             for (let i = 0; i < Math.min(a.length, b.length); i ++) {
                 if (a.charCodeAt(i) !== b.charCodeAt(i)) {
                     return a.charCodeAt(i) > b.charCodeAt(i) ? 1 : -1;
@@ -45,16 +46,6 @@ export default class Log {
             return 0;
         }
         return a > b ? 1 : -1;
-    }
-
-    public static cartesianProduct(a: any[], b: any[]) {
-        const results = [];
-        for (const x of a) {
-            for (const y of b) {
-                results.push([x, y]);
-            }
-        }
-        return results;
     }
 
 }

@@ -71,10 +71,8 @@ export class Datasets {
         this.caches[id] = JSON.parse(fs.readFileSync(this.path + id, "utf-8"));
     }
 
-    public static isIdValid(id: any): boolean {
-        if (!(typeof id === "string")) {
-            return false;
-        } else if (id.includes("_")) {
+    public static isIdValid(id: string): boolean {
+        if (id.includes("_")) {
             return false;
         }
         for (const c of id) {

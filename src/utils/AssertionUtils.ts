@@ -42,4 +42,10 @@ export class AssertionUtils {
         }
     }
 
+    public static assertDefined(val: any) {
+        if (val === undefined) {
+            throw new InsightError("Data not defined");
+        }
+    }
+
 }
