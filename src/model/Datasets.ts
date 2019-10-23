@@ -72,7 +72,9 @@ export class Datasets {
     }
 
     public static isIdValid(id: string): boolean {
-        if (id.includes("_")) {
+        if (typeof id !== "string") {
+            return false;
+        } else if (id.includes("_")) {
             return false;
         }
         for (const c of id) {

@@ -48,4 +48,10 @@ export class AssertionUtils {
         }
     }
 
+    public static assertRegex(val: any, regex: RegExp) {
+        if (!regex.test(val)) {
+            throw new InsightError("Regex not valid");
+        }
+    }
+
 }

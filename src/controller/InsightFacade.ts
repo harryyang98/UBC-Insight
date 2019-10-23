@@ -162,7 +162,8 @@ export default class InsightFacade implements IInsightFacade {
             AssertionUtils.assertObjectByLength(filterContent, 1);
             const contentKey = Object.keys(filterContent)[0];
             const contentValue = filterContent[contentKey];
-            if (!/^[^_]+_[^_]+$/.test(contentKey) || contentKey.split("_")[0] !== id) {
+            AssertionUtils.assertRegex(contentKey, /^[^_]+_[^_]+$/);
+            if (contentKey.split("_")[0] !== id) {
                 throw new InsightError("Invalid key format in filter content or query two datasets");
             }
             const datasetKey = contentKey.split("_")[1];
@@ -197,7 +198,7 @@ export default class InsightFacade implements IInsightFacade {
     private getEntries(entrySet: Set<number>, id: string): any[] {
         const dataset = this.datasets.getDataset(id);
         return Array.from(entrySet.values()).map((idx) => {
-            const entry: any = {};
+            const entry: any = { };
             for (const key in dataset[idx]) {
                 entry[id + "_" + key] = dataset[idx][key];
             }

@@ -1,5 +1,6 @@
 import {InsightError} from "./IInsightFacade";
 import {Decimal} from "decimal.js";
+import {AssertionUtils} from "../utils/AssertionUtils";
 
 export class Operations {
 
@@ -7,9 +8,8 @@ export class Operations {
         IS: ["string", (a: string, regex: string) => {
             if (!regex.includes("*")) {
                 return a === regex;
-            } else if (!/^\*?[^\*]*\*?$/.test(regex)) {
-                throw new InsightError("Invalid regex filter value");
             }
+            AssertionUtils.assertRegex(regex, /^\*?[^\*]*\*?$/);
             return new RegExp("^" + regex.split("*").join(".*") + "$").test(a);
         }],
         EQ: ["number", (a: number, b: number) => {
