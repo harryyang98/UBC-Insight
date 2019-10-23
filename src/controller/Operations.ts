@@ -51,4 +51,23 @@ export class Operations {
         }
     };
 
+    public static compareValues(a: any, b: any): number {
+        AssertionUtils.assertDefined(a);
+        AssertionUtils.assertDefined(b);
+        if (typeof a === "string") {
+            for (let i = 0; i < Math.min(a.length, b.length); i ++) {
+                if (a.charCodeAt(i) !== b.charCodeAt(i)) {
+                    return a.charCodeAt(i) > b.charCodeAt(i) ? 1 : -1;
+                }
+            }
+            if (a.length === b.length) {
+                return 0;
+            }
+            return a.length > b.length ? 1 : -1;
+        }
+        if (a === b) {
+            return 0;
+        }
+        return a > b ? 1 : -1;
+    }
 }

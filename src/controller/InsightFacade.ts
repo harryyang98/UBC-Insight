@@ -2,7 +2,6 @@ import {IInsightFacade, InsightDataset, InsightDatasetKind, InsightError, Result
 import {SetUtils} from "../utils/SetUtils";
 import {Datasets} from "../model/Datasets";
 import {JSONIOService} from "../service/JSONIOService";
-import Util from "../Util";
 import {QueryObject} from "../model/QueryObject";
 import {CourseIOService} from "../service/CourseIOService";
 import {RoomIOService} from "../service/RoomIOService";
@@ -119,7 +118,7 @@ export default class InsightFacade implements IInsightFacade {
                 if (queryObj.orderKeys_.length > 0) {
                     entries.sort((a, b) => {
                         return dirCoefficient * queryObj.orderKeys_.map((key) => {
-                            return Util.compareValues(a[key], b[key]);
+                            return Operations.compareValues(a[key], b[key]);
                         }).reduce((c1, c2) => {
                             return c1 !== 0 ? c1 : c2;
                         });
