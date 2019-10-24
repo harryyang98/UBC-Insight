@@ -1,0 +1,26 @@
+{
+    "title": "simple14",
+    "query":
+    {
+        "WHERE": {
+            "AND": [
+                {"GT": {
+                    "courses_avg": 95
+                }},
+                {"EQ": {
+                    "courses_dept": "math"
+                }}
+            ]
+        },
+        "OPTIONS": {
+            "COLUMNS": [
+                "courses_dept",
+                "courses_avg",
+                "courses_instructor"
+            ],
+            "ORDER": "courses_dept"
+        }
+    }
+    ,
+    "isQueryValid": false,
+    "result": "InSightError"}

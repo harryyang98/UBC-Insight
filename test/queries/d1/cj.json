@@ -1,0 +1,1 @@
+{"query": {"WHERE": {"AND": [{"IS": {"rooms_id": "*2*"}}, {"LT": {"rooms_avg": 50}}]}, "OPTIONS": {"ORDER": "rooms_uuid", "COLUMNS": ["rooms_dept", "rooms_avg"]}}, "result": "InSightError", "isQueryValid": false, "title": "jsoncj"}

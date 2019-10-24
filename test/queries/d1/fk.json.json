@@ -1,0 +1,24 @@
+{
+    "title": "failfk.json",
+    "query":
+    {
+    "WHERE": {
+        "GT": {
+            "courses_avg": 96
+        }
+    },
+    "OPTIONS": {
+        "COLUMNS": [
+            {
+                "a": 57
+            }
+        ],
+        "ORDER": "courses_avg"
+    }
+}
+
+    ,
+    "isQueryValid": false
+    ,
+    "result": "InSightError"
+}

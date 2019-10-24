@@ -1,0 +1,1 @@
+{"title": "jsonaw", "query": {"WHERE": {"AND": [{"IS": {"courses_dept": "math"}}]}, "OPTIONS": {}}, "result": "InSightError", "isQueryValid": false}

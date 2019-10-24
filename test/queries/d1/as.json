@@ -1,0 +1,1 @@
+{"title": "jsonas", "query": {"WHERE": {"AND": [{"IS": {"courses_dept": "math"}}]}, "OPTIONS": {"ORDER": "courses_uuid"}}, "result": "InSightError", "isQueryValid": false}

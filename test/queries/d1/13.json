@@ -1,0 +1,21 @@
+{
+    "title": "simple12",
+    "query":
+    {
+        "WHERE": {
+            "GT": {
+                "courses_avg": 78273
+            }
+        },
+        "OPTIONS": {
+            "COLUMNS": [
+                "courses_title",
+                "courses_id"
+            ],
+            "ORDER": "courses_title"
+        }
+    }
+    ,
+    "isQueryValid": true
+    ,
+    "result":[]}

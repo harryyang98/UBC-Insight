@@ -1,0 +1,1 @@
+{"title": "jsonaf.json", "query": {"WHERE": {"TT": {"courses_avg": 10}}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_avg", "courses_uuid", "courses_instructor", "courses_title", "courses_pass", "courses_fail", "courses_id", "courses_year"], "ORDER": "courses_uuid"}}, "result": "InSightError", "isQueryValid": false}

@@ -1,0 +1,23 @@
+{
+    "title": "simple10",
+    "query":
+    {
+        "WHERE": {
+            "GT": {
+                "courses_avg": 96
+            }
+        },
+        "OPTIONS": {
+            "COLUMNS": [
+                "courses_audit",
+                "courses_uuid"
+            ]
+        },
+        "ZHAHA": {
+        }
+    }
+    ,
+    "isQueryValid": false
+    ,
+    "result": "InSightError"
+}

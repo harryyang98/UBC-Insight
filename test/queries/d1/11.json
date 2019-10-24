@@ -1,0 +1,21 @@
+{
+    "title": "simple11",
+    "query":
+    {
+        "WHERE": {
+            "GT": {
+                "courses_uuid": 78273
+            }
+        },
+        "OPTIONS": {
+            "COLUMNS": [
+                "courses_title",
+                "courses_id"
+            ]
+        }
+    }
+    ,
+    "isQueryValid": false
+    ,
+    "result": "InSightError"
+}

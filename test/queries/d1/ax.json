@@ -1,0 +1,1 @@
+{"title": "jsonax", "query": {"WHERE": {"AND": [{"IS": {"courses_dept": "math"}}]}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_avg", "courses_instructor", "courses_fail", "courses_id", "courses_year", "xyz"], "ORDER": "courses_uuid"}}, "result": "InSightError", "isQueryValid": false}

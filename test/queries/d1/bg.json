@@ -1,0 +1,1 @@
+{"title": "jsonbg", "query": {"WHERE": {"AND": [{"IS": {"courses_dept": "math"}}, {"GT": {"courses_avg": 98, "courses_uuid": 99, "courses_dept": 99}}]}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_avg", "courses_instructor", "courses_fail", "courses_uuid", "courses_year"], "ORDER": "courses_uuid"}}, "result": "InSightError", "isQueryValid": false}
