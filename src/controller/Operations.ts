@@ -1,4 +1,3 @@
-import {InsightError} from "./IInsightFacade";
 import {Decimal} from "decimal.js";
 import {AssertionUtils} from "../utils/AssertionUtils";
 

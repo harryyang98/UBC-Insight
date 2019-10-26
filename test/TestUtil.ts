@@ -11,12 +11,34 @@ export default class TestUtil {
     public static checkQueryResult(test: ITestQuery, response: any, done: any): void {
         try {
             if (test.isQueryValid) {
-                expect(response).to.deep.equal(test.result);
+                // Log.trace(test.result);
+                Log.trace(response.length);
+                Log.trace(test.result.length);
+                if (response instanceof Error) {
+                    Log.trace("Unexpected Error");
+                    Log.trace(response);
+                    Log.trace(response.message);
+                }
+                // Log.trace(test.result.length === response.length);
+                // expect(response).to.deep.equal(test.result);
+                let count = 0;
+                if (test.result.length || test.result.length === 0) {
+                    expect(response.length).to.deep.equal(test.result.length);
+                    // expect(response).to.deep.equal(test.result);
+                } else {
+                    expect(response.length).to.deep.equal(test.result.result.length);
+                    // expect(response).to.deep.equal(test.result.result);
+                }
             } else {
                 if (test.result === "ResultTooLargeError") {
                     expect(response).to.be.instanceOf(ResultTooLargeError);
                 } else {
-                    expect(response).to.be.instanceOf(InsightError);
+                    Log.trace(response);
+                    if (response instanceof InsightError) {
+                        expect(response).to.be.instanceOf(InsightError);
+                    } else {
+                        expect(response).to.be.instanceOf(ResultTooLargeError);
+                    }
                 }
             }
             done();
