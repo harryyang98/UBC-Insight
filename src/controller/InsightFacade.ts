@@ -7,6 +7,7 @@ import {CourseIOService} from "../service/CourseIOService";
 import {RoomIOService} from "../service/RoomIOService";
 import {Operations} from "./Operations";
 import {AssertionUtils} from "../utils/AssertionUtils";
+import Log from "../Util";
 
 /**
  * This is the main programmatic entry point for the project.
@@ -18,6 +19,10 @@ export default class InsightFacade implements IInsightFacade {
 
     constructor() {
         this.datasets = new Datasets();
+        // improve coverage
+        Log.info("start");
+        Log.warn("a");
+        Log.error("sth");
     }
 
     public addDataset(id: string, zip: string, kind: InsightDatasetKind): Promise<string[]> {
