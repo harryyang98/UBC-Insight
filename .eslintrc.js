@@ -27,7 +27,10 @@ module.exports = {
             }
         },
         {
-            "files": ["src/controller/IInsightFacade.ts"],
+            "files": [
+                "src/controller/IInsightFacade.ts",
+                "src/service/*.ts"
+            ],
             "rules": {
                 "@typescript-eslint/interface-name-prefix": "off"
             }
