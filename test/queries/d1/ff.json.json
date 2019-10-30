@@ -1,0 +1,18 @@
+{
+    "title": "failff.json",
+    "query":
+    {
+    "WHERE": {
+        "GT": {
+            "courses_avg": 96
+        }
+    },
+    "OPTIONS": {
+    }
+}
+
+    ,
+    "isQueryValid": false
+    ,
+    "result": "InSightError"
+}

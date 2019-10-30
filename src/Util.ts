@@ -1,9 +1,13 @@
 /* tslint:disable:no-console */
 
+import {InsightError} from "./controller/IInsightFacade";
+import {AssertionUtils} from "./utils/AssertionUtils";
+
 /**
  * Collection of logging methods. Useful for making the output easier to read and understand.
  */
 export default class Log {
+
     public static trace(...msg: any[]): void {
             console.log(`<T> ${new Date().toLocaleString()}:`, ...msg);
     }
@@ -23,4 +27,5 @@ export default class Log {
     public static test(...msg: any[]): void {
             console.log(`<X> ${new Date().toLocaleString()}:`, ...msg);
     }
+
 }

@@ -1,0 +1,23 @@
+{
+    "title": "failfe",
+    "query":
+    {
+    "WHERE": {
+        "GT": {
+            "courses_avg": 96
+        }
+    },
+    "": {
+        "COLUMNS": [
+            "courses_audit",
+            "courses_uuid"
+        ],
+        "ORDER": "courses_avg"
+    }
+}
+
+    ,
+    "isQueryValid": false
+    ,
+    "result": "InSightError"
+}

@@ -1,0 +1,1 @@
+{"query": {"WHERE": {"AND": [{"IS": {"courses_id": "*2*"}}, {"GT": {"courses_avg": 500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}}]}, "OPTIONS": {"ORDER": "courses_fail", "COLUMNS": ["courses_fail", "courses_instructor"]}}, "result": {"result": []}, "isQueryValid": true, "title": "jsoncw"}

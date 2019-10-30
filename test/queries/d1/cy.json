@@ -1,0 +1,1 @@
+{"query": {"WHERE": {"AND": [{"IS": {"courses_id": "*2*"}}, {"GT": {"courses_avg": 96}}]}, "OPTIONS": {"ORDER": "courses_fail", "COLUMNS": ["\u673a\u68b0", "courses_instructor"]}}, "result": "InSightError", "isQueryValid": false, "title": "jsoncy"}

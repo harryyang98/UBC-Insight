@@ -1,0 +1,1 @@
+{"title": "jsonbn", "query": {"WHERE": {"AND": [{"IS": {"courses_dept": "math"}}, {"EQ": {"courses_avg": 40}}]}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_avg", "courses_instructor", "courses_fail", "courses_uuid", "courses_year"], "ORDER": "courses_uuid"}}, "result": {"result": []}, "isQueryValid": true}

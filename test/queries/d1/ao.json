@@ -1,0 +1,1 @@
+{"title": "jsonao", "query": {"WHERE": {"AND": [{"IS": {"courses_dept": "math"}}, {"GT": {"courses_avg": 95}}, {"NOT": {"courses_avg": 98}}]}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_avg", "courses_uuid", "courses_fail", "courses_id", "courses_year"], "ORDER": "courses_uuid"}}, "result": "InSightError", "isQueryValid": false}

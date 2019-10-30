@@ -1,0 +1,28 @@
+{
+    "title": "100",
+    "query":
+    {
+        "WHERE": {
+          "GT": {
+            "courses_avg": 96
+          }
+        },
+        "OPTIONS": {
+          "COLUMNS": [
+            "courses_audit",
+            "courses_audit",
+            "courses_uuid"
+          ],
+          "ORDER": "courses_uuid"
+        },
+          "WHERE": {
+          "GT": {
+            "courses_avg": 97
+          }
+        }
+      }
+    ,
+    "isQueryValid": true
+    ,
+    "result": {"result":[{"courses_audit":0,"courses_uuid":"10235"},{"courses_audit":0,"courses_uuid":"10236"},{"courses_audit":0,"courses_uuid":"15343"},{"courses_audit":0,"courses_uuid":"15344"},{"courses_audit":0,"courses_uuid":"26777"},{"courses_audit":0,"courses_uuid":"28943"},{"courses_audit":0,"courses_uuid":"29255"},{"courses_audit":0,"courses_uuid":"29256"},{"courses_audit":1,"courses_uuid":"32014"},{"courses_audit":1,"courses_uuid":"32015"},{"courses_audit":0,"courses_uuid":"3228"},{"courses_audit":0,"courses_uuid":"33779"},{"courses_audit":0,"courses_uuid":"33780"},{"courses_audit":0,"courses_uuid":"33781"},{"courses_audit":0,"courses_uuid":"35870"},{"courses_audit":0,"courses_uuid":"35871"},{"courses_audit":0,"courses_uuid":"44816"},{"courses_audit":0,"courses_uuid":"44817"},{"courses_audit":0,"courses_uuid":"46405"},{"courses_audit":0,"courses_uuid":"46412"},{"courses_audit":0,"courses_uuid":"49677"},{"courses_audit":0,"courses_uuid":"49678"},{"courses_audit":0,"courses_uuid":"50495"},{"courses_audit":0,"courses_uuid":"5373"},{"courses_audit":0,"courses_uuid":"5374"},{"courses_audit":0,"courses_uuid":"6320"},{"courses_audit":0,"courses_uuid":"65069"},{"courses_audit":0,"courses_uuid":"65070"},{"courses_audit":0,"courses_uuid":"73165"},{"courses_audit":0,"courses_uuid":"73166"},{"courses_audit":0,"courses_uuid":"73173"},{"courses_audit":0,"courses_uuid":"73174"},{"courses_audit":0,"courses_uuid":"73638"},{"courses_audit":0,"courses_uuid":"73639"},{"courses_audit":0,"courses_uuid":"73665"},{"courses_audit":0,"courses_uuid":"73666"},{"courses_audit":0,"courses_uuid":"76309"},{"courses_audit":0,"courses_uuid":"76311"},{"courses_audit":0,"courses_uuid":"86962"},{"courses_audit":0,"courses_uuid":"86963"},{"courses_audit":0,"courses_uuid":"86966"},{"courses_audit":0,"courses_uuid":"87779"},{"courses_audit":0,"courses_uuid":"87780"},{"courses_audit":0,"courses_uuid":"88151"},{"courses_audit":0,"courses_uuid":"88152"},{"courses_audit":0,"courses_uuid":"96250"},{"courses_audit":0,"courses_uuid":"96251"},{"courses_audit":0,"courses_uuid":"96261"},{"courses_audit":0,"courses_uuid":"96262"}]}
+}

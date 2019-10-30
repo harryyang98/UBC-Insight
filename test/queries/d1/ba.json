@@ -1,0 +1,1 @@
+{"title": "jsonba", "query": {"WHERE": {"OR": [{"IS": {"courses_dept": "ma"}}]}, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_avg", "courses_instructor", "courses_fail", "courses_uuid", "courses_year"], "ORDER": "courses_uuid"}}, "result": {"result": []}, "isQueryValid": true}

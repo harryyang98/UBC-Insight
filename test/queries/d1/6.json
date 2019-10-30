@@ -1,0 +1,22 @@
+{
+    "title": "simple6",
+    "query":
+    {
+        "WHERE": {
+            "GT": {
+                "courses_avg": 78
+            }
+        },
+        "OPTIONS": {
+            "EMPTY": [
+                "courses_audit",
+                "courses_uuid"
+            ],
+            "ORDER": "courses_uuid"
+        }
+    }
+    ,
+    "isQueryValid": false
+    ,
+    "result": "InSightError"
+}

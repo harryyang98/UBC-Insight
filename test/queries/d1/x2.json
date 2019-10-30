@@ -1,0 +1,6 @@
+{
+    "title": "Very invalid query",
+    "query": null,
+    "isQueryValid": false,
+    "result": "InsightError"
+}

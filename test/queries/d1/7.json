@@ -1,0 +1,25 @@
+{
+    "title": "simple7",
+    "query":
+    {
+        "WHERE": {
+            "AND": [
+                {"GT": {
+                    "courses_avg": 95
+                }},
+                {"LT": {
+                    "courses_avg": 80
+                }}
+            ]
+        },
+        "OPTIONS": {
+            "COLUMNS": [
+                "courses_audit",
+                "courses_instructor"
+            ],
+            "ORDER": "courses_audit"
+        }
+    }
+    ,
+    "isQueryValid": true,
+    "result":[]}
