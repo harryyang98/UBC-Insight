@@ -8,4 +8,10 @@
  * 4.) Result is rendered in the reference UI by calling CampusExplorer.renderResult with the response from the endpoint as argument
  */
 
-// TODO: implement!
+// bind submit button
+document.querySelector(".bootstrap form").onsubmit((event) => {
+    event.preventDefault();
+    console.log("zhazha");
+    CampusExplorer.buildQuery();
+});
+

@@ -43,7 +43,6 @@ export class QueryObject {
         const options = query["OPTIONS"];
 
         // check where
-        // TODO: should add seperated where object
         try {
             AssertionUtils.assertObjectByLength(this.where, 1);
         } catch (err) {
