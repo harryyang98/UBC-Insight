@@ -9,8 +9,9 @@
  */
 
 // bind submit button
-document.querySelector(".bootstrap form").onsubmit((event) => {
-    event.preventDefault();
+const form = document.querySelector(".bootstrap form");
+form.addEventListener("submit", () => {
+    // event.preventDefault();
     console.log("zhazha");
     CampusExplorer.buildQuery();
 });
