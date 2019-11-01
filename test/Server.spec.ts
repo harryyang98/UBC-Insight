@@ -1,37 +1,52 @@
 import Server from "../src/rest/Server";
 
 import InsightFacade from "../src/controller/InsightFacade";
+import {expect} from "chai";
+import Log from "../src/Util";
+import {InsightDatasetKind} from "../src/controller/IInsightFacade";
 import chai = require("chai");
 import chaiHttp = require("chai-http");
-import Response = ChaiHttp.Response;
-import {expect} from "chai";
 
 describe("Facade D3", function () {
 
     let facade: InsightFacade = null;
     let server: Server = null;
+    const SERVER_URL: string = "http://localhost:4321/";
 
     chai.use(chaiHttp);
 
     before(function () {
         facade = new InsightFacade();
         server = new Server(4321);
-        // TODO: start server here once and handle errors properly
+
+        return server.start().catch((err) => {
+            expect.fail("Cannot start server", err);
+        });
     });
 
     after(function () {
-        // TODO: stop server here once!
+        server.stop();
     });
 
     beforeEach(function () {
-        // might want to add some process logging here to keep track of what"s going on
+        Log.test(`BeforeTest: ${this.currentTest.title}`);
     });
 
     afterEach(function () {
-        // might want to add some process logging here to keep track of what"s going on
+        Log.test(`After: ${this.test.parent.title}`);
     });
 
     // TODO: read your courses and rooms datasets here once!
+    facade.addDataset("courses", "./test/data/courses.zip", InsightDatasetKind.Courses);
+    facade.addDataset("rooms", "./test/data/rooms.zip", InsightDatasetKind.Rooms);
+
+    it("add dataset test - 200", () => {
+        try {
+            // return chai.request(SERVER_URL)
+        } catch (err) {
+            Log.error(err);
+        }
+    });
 
     // Sample on how to format PUT requests
     /*

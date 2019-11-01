@@ -5,6 +5,7 @@
 import fs = require("fs");
 import restify = require("restify");
 import Log from "../Util";
+import {Datasets} from "../model/Datasets";
 
 /**
  * This configures the REST endpoints for the server.
@@ -13,6 +14,7 @@ export default class Server {
 
     private port: number;
     private rest: restify.Server;
+    private datasets: Datasets;
 
     constructor(port: number) {
         Log.info("Server::<init>( " + port + " )");
@@ -64,6 +66,7 @@ export default class Server {
                 that.rest.get("/echo/:msg", Server.echo);
 
                 // NOTE: your endpoints should go here
+                // that.rest.put("/dataset/:id/:kind", this.datasets.getDataset(id));
 
                 // This must be the last endpoint!
                 that.rest.get("/.*", Server.getStatic);
