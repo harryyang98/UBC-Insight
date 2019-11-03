@@ -21,8 +21,6 @@ export default class InsightFacade implements IInsightFacade {
         this.datasets = new Datasets();
         // improve coverage
         Log.info("start");
-        Log.warn("a");
-        Log.error("sth");
     }
 
     public addDataset(id: string, zip: string, kind: InsightDatasetKind): Promise<string[]> {

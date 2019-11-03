@@ -5,7 +5,8 @@
 import fs = require("fs");
 import restify = require("restify");
 import Log from "../Util";
-import {Datasets} from "../model/Datasets";
+import {IInsightFacade, NotFoundError} from "../controller/IInsightFacade";
+import InsightFacade from "../controller/InsightFacade";
 
 /**
  * This configures the REST endpoints for the server.
@@ -14,11 +15,12 @@ export default class Server {
 
     private port: number;
     private rest: restify.Server;
-    private datasets: Datasets;
+    private facade: IInsightFacade;
 
     constructor(port: number) {
         Log.info("Server::<init>( " + port + " )");
         this.port = port;
+        this.facade = new InsightFacade();
     }
 
     /**
@@ -51,7 +53,7 @@ export default class Server {
                 Log.info("Server::start() - start");
 
                 that.rest = restify.createServer({
-                    name: "insightUBC",
+                    name: "insightUBC"
                 });
                 that.rest.use(restify.bodyParser({mapFiles: true, mapParams: true}));
                 that.rest.use(
@@ -66,7 +68,10 @@ export default class Server {
                 that.rest.get("/echo/:msg", Server.echo);
 
                 // NOTE: your endpoints should go here
-                // that.rest.put("/dataset/:id/:kind", this.datasets.getDataset(id));
+                that.rest.put("/dataset/:id/:kind", that.putDataset.bind(that));
+                that.rest.del("/dataset/:id", that.deleteDataset);
+                that.rest.post("/query", that.postQuery);
+                that.rest.get("/datasets", that.getDatasets);
 
                 // This must be the last endpoint!
                 that.rest.get("/.*", Server.getStatic);
@@ -103,6 +108,51 @@ export default class Server {
             Log.error("Server::echo(..) - responding 400");
             res.json(400, {error: err});
         }
+        return next();
+    }
+
+    private async putDataset(req: restify.Request, res: restify.Response, next: restify.Next) {
+        Log.trace("Server::put dataset");
+        await this.facade.addDataset(req.params.id, req.body.toString("base64"), req.params.kind).then((ids) => {
+            res.json(200, { result: ids });
+        }).catch((err) => {
+            Log.error("Server::" + err);
+            res.json(400, { error: err });
+        });
+        return next();
+    }
+
+    private async deleteDataset(req: restify.Request, res: restify.Response, next: restify.Next) {
+        Log.trace("Server::delete dataset");
+        await this.facade.removeDataset(req.params.id).then((id) => {
+            res.json(200, { result: id});
+        }).catch((err) => {
+            Log.error("Server::" + err);
+            if (err instanceof NotFoundError) {
+                res.json(404, { error: err });
+            } else {
+                res.json(400, { error: err });
+            }
+        });
+        return next();
+    }
+
+    private async postQuery(req: restify.Request, res: restify.Response, next: restify.Next) {
+        Log.trace("Server::query dataset");
+        await this.facade.performQuery(req.body).then((results) => {
+            res.json(200, { result: results });
+        }).catch((err) => {
+            Log.error("Server::" + err);
+            res.json(400, { error: err });
+        });
+        return next();
+    }
+
+    private async getDatasets(req: restify.Request, res: restify.Response, next: restify.Next) {
+        Log.trace("Server::get datasets");
+        await this.facade.listDatasets().then((sets) => {
+            res.json(200, { result: sets });
+        });
         return next();
     }
 
