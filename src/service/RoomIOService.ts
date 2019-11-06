@@ -109,5 +109,4 @@ export class RoomIOService extends JSONIOService {
         }
         return node.childNodes[1].childNodes[0].value.trim();
     }
-
 }
