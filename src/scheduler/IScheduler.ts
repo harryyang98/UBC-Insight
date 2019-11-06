@@ -32,7 +32,6 @@ export type TimeSlot =
     "TR  0800-0930" | "TR  0930-1100" | "TR  1100-1230" |
     "TR  1230-1400" | "TR  1400-1530" | "TR  1530-1700";
 
-
 export interface IScheduler {
     /**
      * Schedule course sections into rooms

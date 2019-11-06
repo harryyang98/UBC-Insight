@@ -9,7 +9,11 @@
  */
 
 function onSubmit() {
-    CampusExplorer.buildQuery();
+    let query = CampusExplorer.buildQuery();
+
+    CampusExplorer.sendQuery(query).then((result) => {
+        CampusExplorer.renderResult(result);
+    });
 }
 
 // bind submit button
