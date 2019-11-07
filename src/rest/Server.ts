@@ -117,7 +117,7 @@ export default class Server {
             res.json(200, { result: ids });
         }).catch((err) => {
             Log.error("Server::" + err);
-            res.json(400, { error: err });
+            res.json(400, { error: err.toString() });
         });
         return next();
     }
@@ -129,9 +129,9 @@ export default class Server {
         }).catch((err) => {
             Log.error("Server::" + err);
             if (err instanceof NotFoundError) {
-                res.json(404, { error: err });
+                res.json(404, { error: err.toString() });
             } else {
-                res.json(400, { error: err });
+                res.json(400, { error: err.toString() });
             }
         });
         return next();
@@ -143,7 +143,7 @@ export default class Server {
             res.json(200, { result: results });
         }).catch((err) => {
             Log.error("Server::" + err);
-            res.json(400, { error: err });
+            res.json(400, { error: err.toString() });
         });
         return next();
     }
