@@ -22,7 +22,6 @@ function dataToQuery(data, toKey) {
     // add OPTION
     const options = {};
     options["COLUMNS"] = data["columns"].map(toKey);
-    options["COLUMNS"].push(...data["transformations"].map((x) => x.term));
     const order = data["order"];
     if (order.length > 0) {
         options["ORDER"] = {
