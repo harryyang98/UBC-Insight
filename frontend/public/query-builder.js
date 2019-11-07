@@ -6,14 +6,18 @@ function dataToQuery(data, toKey) {
         comp[toKey(cond.field)] = cond.op === "IS" ? cond.term : parseInt(cond.term, 10);
         const atom = {};
         atom[cond.op] = comp;
-        return cond.not ? atom : { NOT: atom };
+        return cond.not ? { NOT: atom } : atom;
     });
     const typeOp = {
         all: (x) => ({AND: x}),
         any: (x) => ({OR: x}),
         none: (x) => ({NOT: {OR: x}})
     };
-    query["WHERE"] = whereArr.length > 0 ? typeOp[data["conditions_type"]](whereArr) : {};
+    if (whereArr.length === 0) {
+        query["WHERE"] = {};
+    } else {
+        query["WHERE"] = whereArr.length > 1 ? typeOp[data["conditions_type"]](whereArr) : whereArr[0];
+    }
 
     // add OPTION
     const options = {};
@@ -22,23 +26,28 @@ function dataToQuery(data, toKey) {
     const order = data["order"];
     if (order.length > 0) {
         options["ORDER"] = {
-            keys: order,
+            keys: order.map(toKey),
             dir: data["order_descending"] ? "DOWN" : "UP"
         };
+        if (options["ORDER"].keys.length === 1 && options["ORDER"].dir === "UP") {
+            options["ORDER"] = options["ORDER"].keys[0];
+        }
     }
     query["OPTIONS"] = options;
 
     // add TRANSFORMATION
-    const transformations = {};
-    transformations["GROUP"] = data["groups"].map(toKey);
-    transformations["APPLY"] = data["transformations"].map((app) => {
-        const trans = {};
-        trans[app.op] = toKey(app.field);
-        const atom = {};
-        atom[app.term] = trans;
-        return atom;
-    });
-    query["TRANSFORMATIONS"] = transformations;
+    if (data["groups"].length > 0 || data["transformations"].length > 0) {
+        const transformations = {};
+        transformations["GROUP"] = data["groups"].map(toKey);
+        transformations["APPLY"] = data["transformations"].map((app) => {
+            const trans = {};
+            trans[app.op] = toKey(app.field);
+            const atom = {};
+            atom[app.term] = trans;
+            return atom;
+        });
+        query["TRANSFORMATIONS"] = transformations;
+    }
 
     return query;
 }
@@ -46,7 +55,7 @@ function dataToQuery(data, toKey) {
 function getFormData() {
     // add entries
     const data = {};
-    data["conditions"] = queryArray(".bootstrap .conditions-container .condition").map((cond) => {
+    data["conditions"] = queryArray(".conditions-container .condition").map((cond) => {
         return {
             not: cond.children[0].children[0].checked,
             field: cond.children[1].children[0].value,
@@ -54,7 +63,7 @@ function getFormData() {
             term: cond.children[3].children[0].value
         };
     });
-    data["transformations"] = queryArray(".bootstrap .transformations-container .transformation").map((trans) => {
+    data["transformations"] = queryArray(".transformations-container .transformation").map((trans) => {
         return {
             term: trans.children[0].children[0].value,
             op: trans.children[1].children[0].value,
@@ -63,11 +72,11 @@ function getFormData() {
     });
 
     // add options
-    data["conditions_type"] =  extractOptions(queryArray(".bootstrap .condition-type input"))[0];
-    data["order"] = extractSelections(queryArray(".bootstrap option"));
-    data["order_descending"] = document.querySelector(".bootstrap .descending input").checked;
-    data["columns"] = extractOptions(queryArray(".bootstrap .columns .field input"));
-    data["groups"] = extractOptions(queryArray(".bootstrap .groups .field input"));
+    data["conditions_type"] =  extractOptions(queryArray(".condition-type input"))[0];
+    data["order"] = extractSelections(queryArray(".order option"));
+    data["order_descending"] = document.querySelector(".descending input").checked;
+    data["columns"] = extractOptions(queryArray(".columns .field input"));
+    data["groups"] = extractOptions(queryArray(".groups .field input"));
 
     return data;
 }
@@ -77,7 +86,7 @@ function getId() {
 }
 
 function getKind() {
-    return document.querySelector(".bootstrap .nav .active").getAttribute("data-type");
+    return document.querySelector("div.tab-panel.active").getAttribute("data-type");
 }
 
 function extractOptions(options) {
@@ -100,6 +109,9 @@ function queryArray(query) {
  * @returns query object adhering to the query EBNF
  */
 CampusExplorer.buildQuery = function () {
-    return dataToQuery(getFormData(), (x) => getId() + "_" + x);
+    const query = dataToQuery(getFormData(), (x) => getId() + "_" + x);
+    console.log("Query building complete:");
+    console.log(query);
+    return query;
 };
 

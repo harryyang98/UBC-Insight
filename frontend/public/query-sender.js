@@ -6,18 +6,21 @@
  */
 CampusExplorer.sendQuery = function (query) {
     return new Promise(function (fulfill, reject) {
+        console.log("Ready to post query: \n" );
         const server_url = "http://localhost:4321/query";
 
         let xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange(() => {
-            if (this.readyState === 4 && this.status === 200) {
-                fulfill(this.responseText);
-            }
-            reject(this.responseText);
-        });
+        xhttp.onload = () => {
+            console.log(xhttp.response);
+            fulfill(xhttp.response)
+        };
+        xhttp.onerror = () => {
+            console.log(xhttp.response);
+            reject(xhttp.response)
+        };
 
         xhttp.open("POST", server_url);
         xhttp.setRequestHeader("Content-Type", "application/json");
-        xhttp.send(query);
+        xhttp.send(JSON.stringify(query));
     });
 };

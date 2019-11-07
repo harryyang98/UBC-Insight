@@ -8,15 +8,19 @@
  * 4.) Result is rendered in the reference UI by calling CampusExplorer.renderResult with the response from the endpoint as argument
  */
 
-function onSubmit() {
+function onSubmit(evt) {
     let query = CampusExplorer.buildQuery();
 
     CampusExplorer.sendQuery(query).then((result) => {
-        CampusExplorer.renderResult(result);
+        CampusExplorer.renderResult(JSON.parse(result));
+    }).catch((err) => {
+        console.log(err);
+        // CampusExplorer.renderResult(err);
     });
 }
 
 // bind submit button
 const btn_submit = document.querySelector(".bootstrap .submit");
-btn_submit.addEventListener("click", onSubmit);
-
+if (btn_submit) {
+    btn_submit.addEventListener("click", onSubmit);
+}
