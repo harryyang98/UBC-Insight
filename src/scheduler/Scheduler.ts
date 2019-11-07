@@ -4,7 +4,6 @@ import {TimeTable} from "./TimeTable";
 export default class Scheduler implements IScheduler {
 
     public schedule(sections: SchedSection[], rooms: SchedRoom[]): Array<[SchedRoom, SchedSection, TimeSlot]> {
-
         // add course and room id back
         return [];
     }

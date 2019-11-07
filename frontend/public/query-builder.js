@@ -55,7 +55,7 @@ function dataToQuery(data, toKey) {
 function getFormData() {
     // add entries
     const data = {};
-    data["conditions"] = queryArray(".conditions-container .condition").map((cond) => {
+    data["conditions"] = queryArray(getKindClass() + ".conditions-container .condition").map((cond) => {
         return {
             not: cond.children[0].children[0].checked,
             field: cond.children[1].children[0].value,
@@ -63,7 +63,7 @@ function getFormData() {
             term: cond.children[3].children[0].value
         };
     });
-    data["transformations"] = queryArray(".transformations-container .transformation").map((trans) => {
+    data["transformations"] = queryArray(getKindClass() + ".transformations-container .transformation").map((trans) => {
         return {
             term: trans.children[0].children[0].value,
             op: trans.children[1].children[0].value,
@@ -72,13 +72,17 @@ function getFormData() {
     });
 
     // add options
-    data["conditions_type"] =  extractOptions(queryArray(".condition-type input"))[0];
-    data["order"] = extractSelections(queryArray(".order option"));
-    data["order_descending"] = document.querySelector(".descending input").checked;
-    data["columns"] = extractOptions(queryArray(".columns .field input"));
-    data["groups"] = extractOptions(queryArray(".groups .field input"));
+    data["conditions_type"] =  extractOptions(queryArray(getKindClass() + ".condition-type input"))[0];
+    data["order"] = extractSelections(queryArray(getKindClass() + ".order option"));
+    data["order_descending"] = document.querySelector(getKindClass() + ".descending input").checked;
+    data["columns"] = extractOptions(queryArray(getKindClass() + ".columns .field input"));
+    data["groups"] = extractOptions(queryArray(getKindClass() + ".groups .field input"));
 
     return data;
+}
+
+function getKindClass() {
+    return "div.tab-panel.active ";
 }
 
 function getId() {
@@ -86,7 +90,7 @@ function getId() {
 }
 
 function getKind() {
-    return document.querySelector("div.tab-panel.active").getAttribute("data-type");
+    return document.querySelector(getKindClass()).getAttribute("data-type");
 }
 
 function extractOptions(options) {
