@@ -1,7 +1,7 @@
 import {SchedRoom, SchedSection, TimeSlot} from "./IScheduler";
 
 export interface Plan {
-    location: SchedRoom;
+    room: SchedRoom;
     slot: TimeSlot;
     section: SchedSection;
 }
@@ -10,13 +10,53 @@ export class TimeTable {
     private plans: Plan[];
     private timeSlots: string[];
 
-    constructor(timeTable?: TimeTable) {
+    public get _timeSlots() {
+        return this.timeSlots;
+    }
+
+    constructor() {
         this.clear();
         this.setupTimeSlots();
     }
 
     public addPlan(plan: Plan) {
         this.plans.push(plan);
+    }
+
+    public addPlans(plans: Plan[]) {
+        this.plans.push(...plans);
+    }
+
+    public getPlansByRoom(room: SchedRoom) {
+        return this.plans.filter((plan) => {
+            return plan.room === room;
+        });
+    }
+
+    public removePlanByRoom(room: SchedRoom) {
+        this.plans = this.plans.filter((plan) => {
+            return !(plan.room === room);
+        });
+    }
+
+    public shuffleRoomPlans(room: SchedRoom) {
+        const temps = this.plans.filter((plan) => {
+            return plan.room === room;
+        }).sort((a, b) => {
+            return 0.5 - Math.random();
+        });
+        this.removePlanByRoom(room);
+        this.addPlans(temps);
+    }
+
+    public getRooms() {
+        const rooms: SchedRoom[] = [];
+        for (const plan of this.plans) {
+            if (!rooms.includes(plan.room)) {
+                rooms.push(plan.room);
+            }
+        }
+        return rooms;
     }
 
     public clear() {
