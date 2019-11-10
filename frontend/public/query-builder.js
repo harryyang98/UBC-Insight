@@ -15,8 +15,10 @@ function dataToQuery(data, toKey) {
     };
     if (whereArr.length === 0) {
         query["WHERE"] = {};
+    } else if (whereArr.length === 1) {
+        query["WHERE"] = data["conditions_type"] === "none" ? {NOT: whereArr[0]} : whereArr[0];
     } else {
-        query["WHERE"] = whereArr.length > 1 ? typeOp[data["conditions_type"]](whereArr) : whereArr[0];
+        query["WHERE"] = typeOp[data["conditions_type"]](whereArr);
     }
 
     // add OPTION
@@ -35,7 +37,7 @@ function dataToQuery(data, toKey) {
     query["OPTIONS"] = options;
 
     // add TRANSFORMATION
-    if (data["groups"].length > 0 || data["transformations"].length > 0) {
+    if (data["groups"].length > 0 && data["transformations"].length > 0) {
         const transformations = {};
         transformations["GROUP"] = data["groups"].map(toKey);
         transformations["APPLY"] = data["transformations"].map((app) => {
