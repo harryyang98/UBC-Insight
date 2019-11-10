@@ -9,8 +9,8 @@ function dataToQuery(data, toKey) {
         return cond.not ? { NOT: atom } : atom;
     });
     const typeOp = {
-        all: (x) => ({AND: x}),
-        any: (x) => ({OR: x}),
+        all: (x) => ({OR: x}),
+        any: (x) => ({AND: x}),
         none: (x) => ({NOT: {OR: x}})
     };
     if (whereArr.length === 0) {
