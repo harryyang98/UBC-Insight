@@ -3,15 +3,15 @@ function dataToQuery(data, toKey) {
     const query = {};
     const whereArr = data["conditions"].map((cond) => {
         const comp = {};
-        comp[toKey(cond.field)] = cond.op === "IS" ? cond.term : parseInt(cond.term, 10);
+        comp[toKey(cond.field)] = cond.op === "IS" ? cond.term : Number(cond.term);
         const atom = {};
         atom[cond.op] = comp;
         return cond.not ? { NOT: atom } : atom;
     });
     const typeOp = {
-        all: (x) => ({OR: x}),
-        any: (x) => ({AND: x}),
-        none: (x) => ({NOT: {OR: x}})
+        all: (x) => ({AND: x}),
+        any: (x) => ({OR: x}),
+        none: (x) => ({ AND: x.map((e) => Object.keys(e).includes("NOT") ? e["NOT"] : { NOT: e }) })
     };
     if (whereArr.length === 0) {
         query["WHERE"] = {};
