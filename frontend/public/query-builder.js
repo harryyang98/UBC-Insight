@@ -34,6 +34,7 @@ function dataToQuery(data, toKey) {
             keys: order.map(toKey),
             dir: data["order_descending"] ? "DOWN" : "UP"
         };
+        options["ORDER"].keys.push(...data["order_trans"]);
         if (options["ORDER"].keys.length === 1 && options["ORDER"].dir === "UP") {
             options["ORDER"] = options["ORDER"].keys[0];
         }
@@ -78,7 +79,8 @@ function getFormData() {
 
     // add options
     data["conditions_type"] =  extractOptions(queryArray(getKindClass() + ".condition-type input"))[0];
-    data["order"] = extractSelections(queryArray(getKindClass() + ".order option"));
+    data["order"] = extractSelections(queryArray(getKindClass() + ".order option:not(.transformation)"));
+    data["order_trans"] = extractSelections(queryArray(getKindClass() + ".order option.transformation"));
     data["order_descending"] = document.querySelector(getKindClass() + ".descending input").checked;
     data["columns"] = extractOptions(queryArray(getKindClass() + ".columns .field input"));
     data["columns_trans"] = extractOptions(queryArray(getKindClass() + ".columns .transformation input"));
