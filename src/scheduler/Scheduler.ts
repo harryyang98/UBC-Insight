@@ -18,7 +18,7 @@ export default class Scheduler implements IScheduler {
         }
 
         // fix conflicts of section time requirements
-        this.fixConflicts(bestTable);
+        // this.fixConflicts(bestTable);
 
         return bestTable.toArray().map((plan: Plan) => {
             return [plan.room, plan.section, plan.slot];
