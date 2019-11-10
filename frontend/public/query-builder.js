@@ -16,7 +16,10 @@ function dataToQuery(data, toKey) {
     if (whereArr.length === 0) {
         query["WHERE"] = {};
     } else if (whereArr.length === 1) {
-        query["WHERE"] = data["conditions_type"] === "none" ? {NOT: whereArr[0]} : whereArr[0];
+        if (data["conditions_type"] === "none") {
+            query["WHERE"] = data["conditions"][0].not ? whereArr[0]["NOT"] : { NOT: whereArr[0] };
+        }
+        query["WHERE"] = whereArr[0];
     } else {
         query["WHERE"] = typeOp[data["conditions_type"]](whereArr);
     }
@@ -24,6 +27,7 @@ function dataToQuery(data, toKey) {
     // add OPTION
     const options = {};
     options["COLUMNS"] = data["columns"].map(toKey);
+    options["COLUMNS"].push(...data["columns_trans"]);
     const order = data["order"];
     if (order.length > 0) {
         options["ORDER"] = {
@@ -37,7 +41,7 @@ function dataToQuery(data, toKey) {
     query["OPTIONS"] = options;
 
     // add TRANSFORMATION
-    if (data["groups"].length > 0 && data["transformations"].length > 0) {
+    if (data["groups"].length > 0) {
         const transformations = {};
         transformations["GROUP"] = data["groups"].map(toKey);
         transformations["APPLY"] = data["transformations"].map((app) => {
@@ -77,6 +81,7 @@ function getFormData() {
     data["order"] = extractSelections(queryArray(getKindClass() + ".order option"));
     data["order_descending"] = document.querySelector(getKindClass() + ".descending input").checked;
     data["columns"] = extractOptions(queryArray(getKindClass() + ".columns .field input"));
+    data["columns_trans"] = extractOptions(queryArray(getKindClass() + ".columns .transformation input"));
     data["groups"] = extractOptions(queryArray(getKindClass() + ".groups .field input"));
 
     return data;
