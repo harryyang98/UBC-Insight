@@ -1,5 +1,5 @@
 import {SchedRoom, SchedSection} from "./IScheduler";
-import {TimeTable} from "./TimeTable";
+import {Plan, TimeTable} from "./TimeTable";
 
 export class ScoreCalculator {
     private readonly totalEnrollment: number;
@@ -12,12 +12,17 @@ export class ScoreCalculator {
 
     public calcScore(timeTable: TimeTable): number {
         const plans = timeTable.toArray();
+        if (plans.length === 0) {
+            return 0;
+        }
+
         const enrollScore = 0.7 * ScoreCalculator.calcEnrollment(plans) / this.totalEnrollment;
-        const distanceScore = 0.3 * (1 - ScoreCalculator.findMaxDistance(plans) / 2);
+        const distanceScore = 0.3 * (1 - (ScoreCalculator.findMaxDistance(plans) / 1372));
         return enrollScore + distanceScore;
     }
 
-    private static distance(room1: SchedRoom, room2: SchedRoom): number {
+    // public only for test
+    public static distance(room1: SchedRoom, room2: SchedRoom): number {
         const z1 = ScoreCalculator.toRad(room1.rooms_lat);
         const z2 = ScoreCalculator.toRad(room2.rooms_lat);
         const dz = ScoreCalculator.toRad(room2.rooms_lat - room1.rooms_lat);
@@ -35,16 +40,16 @@ export class ScoreCalculator {
         return x * Math.PI / 180;
     }
 
-    private static calcEnrollment(plans: any[]): number {
-        return plans.reduce((num, p2: any) => {
-            return num + p2[0].seats;
+    private static calcEnrollment(plans: Plan[]): number {
+        return plans.reduce((num, p2) => {
+            return num + p2.room.rooms_seats;
         }, 0);
     }
 
-    private static findMaxDistance(plans: any[]): number {
-        return Math.max(...plans.map((p1: any) => {
-            return Math.max(...plans.map((p2: any) => {
-                return ScoreCalculator.distance(p1[0], p2[0]);
+    private static findMaxDistance(plans: Plan[]): number {
+        return Math.max(...plans.map((p1) => {
+            return Math.max(...plans.map((p2) => {
+                return ScoreCalculator.distance(p1.room, p2.room);
             }));
         }));
     }

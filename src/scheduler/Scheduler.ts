@@ -12,17 +12,22 @@ export default class Scheduler implements IScheduler {
         let bestTable = new TimeTable();
         while (rooms.length > 0 && sectionSet.size > 0) {
             // add the room with best sections that results in highest score
-            this.takeBestRoom(bestTable, rooms, sectionSet, calc);
+            if (!this.takeBestRoom(bestTable, rooms, sectionSet, calc)) {
+                break;
+            }
         }
 
         // fix conflicts of section time requirements
+        this.fixConflicts(bestTable);
 
-        return bestTable.toArray();
+        return bestTable.toArray().map((plan: Plan) => {
+            return [plan.room, plan.section, plan.slot];
+        });
     }
 
     private takeBestRoom(
         table: TimeTable, roomChoices: SchedRoom[], secChoices: Set<SchedSection>, calc: ScoreCalculator
-    ) {
+    ): boolean {
         const oldScore = calc.calcScore(table);
         const self = this;
         const bestRoom = roomChoices.reduce((temp: any, room: SchedRoom) => {
@@ -33,16 +38,21 @@ export default class Scheduler implements IScheduler {
             return (score - oldScore > 0 && score > temp[1]) ? [room, score] : temp;
         }, [null, 0])[0];
 
+        // skip if there no room to add
+        if (bestRoom === null) {
+            return false;
+        }
+        table.addPlans(self.findBestRoomPlans(table, bestRoom, secChoices));
+
         // remove room courses from choices for next round
-        roomChoices = roomChoices.filter((room) => {
-            return !(room === bestRoom);
-        });
+        roomChoices.splice(roomChoices.indexOf(bestRoom), 1);
         const bestSections = this.findBestRoomPlans(table, bestRoom, secChoices).map((p) => {
             return p.section;
         });
         for (const sec of bestSections) {
             secChoices.delete(sec);
         }
+        return true;
     }
 
     private findBestRoomPlans(table: TimeTable, room: SchedRoom, secChoices: Set<SchedSection>): Plan[] {
@@ -61,15 +71,18 @@ export default class Scheduler implements IScheduler {
     }
 
     private fixConflicts(table: TimeTable) {
+        if (table.getRooms().length < 2) {
+            return;
+        }
         table.getRooms().reduce((r1, r2) => {
-            while (this.hasConflict(table, r1, r2)) {
-                table.shuffleRoomPlans(r1);
+            while (Scheduler.hasConflict(table, r1, r2)) {
+                table.shuffleRoomPlans(r2);
             }
             return r2;
         });
     }
 
-    private hasConflict(table: TimeTable, r1: SchedRoom, r2: SchedRoom): boolean {
+    private static hasConflict(table: TimeTable, r1: SchedRoom, r2: SchedRoom): boolean {
         const plans1 = table.getPlansByRoom(r1);
         const plans2 = table.getPlansByRoom(r2);
         for (const p1 of table.getPlansByRoom(r1)) {

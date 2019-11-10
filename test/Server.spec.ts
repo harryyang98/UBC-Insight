@@ -3,7 +3,6 @@ import Server from "../src/rest/Server";
 import InsightFacade from "../src/controller/InsightFacade";
 import {expect} from "chai";
 import Log from "../src/Util";
-import {InsightDatasetKind} from "../src/controller/IInsightFacade";
 import chai = require("chai");
 import chaiHttp = require("chai-http");
 import * as fs from "fs";
