@@ -99,7 +99,7 @@ describe("Facade D3", function () {
     it("delete dataset - rooms - 200", () => {
         try {
             return chai.request(SERVER_URL)
-                .del("dataset/myrooms/rooms")
+                .del("dataset/myrooms")
                 .then( (res) => {
                     Log.trace(res);
                     expect(res.status).to.be.equal(200);
@@ -132,7 +132,7 @@ describe("Facade D3", function () {
     it("delete dataset - notFoundError - 404", () => {
         try {
             return chai.request(SERVER_URL)
-                .del("dataset/myrooms/rooms")
+                .del("dataset/myrooms")
                 .then( (res) => {
                     Log.trace(res);
                     expect.fail("should not pass with not found error");
@@ -148,7 +148,7 @@ describe("Facade D3", function () {
     it("post queue - 200 - courses", () => {
         try {
             return chai.request(SERVER_URL)
-                .post("/query/valid query testing post.json")
+                .post("query")
                 .then((res) => {
                     Log.trace(res);
                     expect(res.status).to.be.equal(200);
@@ -166,7 +166,7 @@ describe("Facade D3", function () {
     it("post queue - 400 - courses", () => {
         try {
             return chai.request(SERVER_URL)
-                .post("/query/invalid query testing post.json")
+                .post("query/invalid query testing post.json")
                 .then((res) => {
                     Log.trace(res);
                     expect.fail("should fail due to invalid query");
@@ -183,7 +183,7 @@ describe("Facade D3", function () {
     it(" get dataset - 200 - courses", () => {
         try {
             return chai.request(SERVER_URL)
-                .get("dataset/courses/courses")
+                .get("datasets")
                 .then((res) => {
                     Log.trace(res);
                     expect(res.status).to.be.equal(200);
