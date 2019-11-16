@@ -5,6 +5,7 @@ import {ScoreCalculator} from "./ScoreCalculator";
 export default class Scheduler implements IScheduler {
 
     public schedule(sections: SchedSection[], rooms: SchedRoom[]): Array<[SchedRoom, SchedSection, TimeSlot]> {
+        rooms = [...rooms];
         const calc = new ScoreCalculator(sections);
         const sectionSet = new Set<SchedSection>(sections);
 
@@ -18,7 +19,7 @@ export default class Scheduler implements IScheduler {
         }
 
         // fix conflicts of section time requirements
-        // this.fixConflicts(bestTable);
+        this.fixConflicts(bestTable);
 
         return bestTable.toArray().map((plan: Plan) => {
             return [plan.room, plan.section, plan.slot];
@@ -56,13 +57,12 @@ export default class Scheduler implements IScheduler {
     }
 
     private findBestRoomPlans(table: TimeTable, room: SchedRoom, secChoices: Set<SchedSection>): Plan[] {
-        const self = this;
         let count = 0;
         return Array.from(secChoices).sort((a, b) => {
             if (Scheduler.secSize(a) === Scheduler.secSize(b)) {
                 return 0;
             }
-            return Scheduler.secSize(a) > Scheduler.secSize(b) ? 1 : -1;
+            return Scheduler.secSize(a) < Scheduler.secSize(b) ? 1 : -1;
         }).filter((sec) => {
             return !Scheduler.canFitIn(room, sec);
         }).slice(0, table.slotSize()).map((sec) => {
@@ -74,29 +74,45 @@ export default class Scheduler implements IScheduler {
         if (table.getRooms().length < 2) {
             return;
         }
-        table.getRooms().reduce((r1, r2) => {
-            while (Scheduler.hasConflict(table, r1, r2)) {
-                table.shuffleRoomPlans(r2);
-            }
-            return r2;
-        });
-    }
+        for (const room of table.getRooms()) {
+            let count = 0;
+            while (Scheduler.hasConflict(table, room, false)) {
+                table.shuffleRoomPlans(room);
 
-    private static hasConflict(table: TimeTable, r1: SchedRoom, r2: SchedRoom): boolean {
-        const plans1 = table.getPlansByRoom(r1);
-        const plans2 = table.getPlansByRoom(r2);
-        for (const p1 of table.getPlansByRoom(r1)) {
-            for (const p2 of table.getPlansByRoom(r2)) {
-                if (
-                    p1.slot === p2.slot
-                    && p1.section.courses_dept === p2.section.courses_dept
-                    && p1.section.courses_id === p2.section.courses_id
-                ) {
-                    return false;
+                // start to remove the conflicts if impossible
+                if (count ++ > 50) {
+                    Scheduler.hasConflict(table, room, true);
+                    count = 45;
                 }
             }
         }
-        return true;
+    }
+
+    private static hasConflict(table: TimeTable, target: SchedRoom, remove: boolean): boolean {
+        let conflict: Plan = null;
+        for (const from of table.getRooms()) {
+            if (from === target) {
+                continue;
+            }
+            for (const p1 of table.getPlansByRoom(from)) {
+                for (const p2 of table.getPlansByRoom(target)) {
+                    if (
+                        p1.slot === p2.slot
+                        && p1.section.courses_dept === p2.section.courses_dept
+                        && p1.section.courses_id === p2.section.courses_id
+                    ) {
+                        conflict = p1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (remove && conflict !== null) {
+            table.removePlan(conflict);
+            return true;
+        }
+        return conflict !== null;
     }
 
     private static canFitIn(room: SchedRoom, sec: SchedSection): boolean {

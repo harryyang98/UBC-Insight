@@ -42,7 +42,7 @@ export class ScoreCalculator {
 
     private static calcEnrollment(plans: Plan[]): number {
         return plans.reduce((num, p2) => {
-            return num + p2.room.rooms_seats;
+            return num + p2.section.courses_pass + p2.section.courses_audit + p2.section.courses_fail;
         }, 0);
     }
 

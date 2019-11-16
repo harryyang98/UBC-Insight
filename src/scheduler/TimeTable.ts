@@ -8,7 +8,7 @@ export interface Plan {
 
 export class TimeTable {
     private plans: Plan[];
-    private timeSlots: string[];
+    private timeSlots: TimeSlot[];
 
     public get _timeSlots() {
         return this.timeSlots;
@@ -39,14 +39,25 @@ export class TimeTable {
         });
     }
 
+    public removePlan(plan: Plan) {
+        this.plans = this.plans.filter((p) => {
+            return !(p === plan);
+        });
+    }
+
     public shuffleRoomPlans(room: SchedRoom) {
-        const temps = this.plans.filter((plan) => {
+        const secs = this.plans.filter((plan) => {
             return plan.room === room;
-        }).sort((a, b) => {
+        });
+        this.timeSlots.sort((a, b) => {
             return 0.5 - Math.random();
         });
-        this.removePlanByRoom(room);
-        this.addPlans(temps);
+        for (let i = 0; i < secs.length; i ++) {
+            secs[i].slot = this.timeSlots[i];
+        }
+        // this.removePlanByRoom(room);
+        // this.addPlans(temps);
+        this.setupTimeSlots();
     }
 
     public getRooms() {

@@ -2,7 +2,7 @@ import {expect} from "chai";
 import Log from "../../src/Util";
 import {ScoreCalculator} from "../../src/scheduler/ScoreCalculator";
 import {TimeTable} from "../../src/scheduler/TimeTable";
-import {IScheduler} from "../../src/scheduler/IScheduler";
+import {IScheduler, SchedSection} from "../../src/scheduler/IScheduler";
 import Scheduler from "../../src/scheduler/Scheduler";
 
 
@@ -51,6 +51,13 @@ describe("scheduler", () => {
             rooms_lon: -123.25099
         },
         {
+            rooms_shortname: "AERL",
+            rooms_number: "121",
+            rooms_seats: 140,
+            rooms_lat: 49.26372,
+            rooms_lon: -123.25099
+        },
+        {
             rooms_shortname: "ALRD",
             rooms_number: "105",
             rooms_seats: 94,
@@ -72,7 +79,9 @@ describe("scheduler", () => {
             rooms_lon: -123.25468
         }
     ];
+
     let scheduler: IScheduler = null;
+    let slotSize = 15;
 
     before(() => {
         scheduler = new Scheduler();
@@ -82,4 +91,52 @@ describe("scheduler", () => {
         const res = scheduler.schedule(sections, rooms);
         Log.trace(res);
     });
+
+    it("test section conflicts --- normal case", () => {
+        const secs: SchedSection[] = [];
+        for (let i = 0; i < slotSize; i ++) {
+            secs.push({
+                courses_dept: "cpsc",
+                courses_id: "31" + i,
+                courses_uuid: String(1000 + i),
+                courses_pass: 120 - i,
+                courses_fail: 11,
+                courses_audit: 5
+            });
+        }
+        secs.push({
+            courses_dept: "cpsc",
+            courses_id: "310",
+            courses_uuid: "2000",
+            courses_pass: 100,
+            courses_fail: 10,
+            courses_audit: 5
+        });
+
+        const res = scheduler.schedule(secs, rooms);
+        const temp = res.filter((p) => {
+            return p[1].courses_id === "310";
+        });
+        Log.trace(temp);
+    });
+
+    it("test section conflicts --- impossible case", () => {
+        const secs: SchedSection[] = [];
+        for (let i = 0; i < slotSize + 1; i ++) {
+            secs.push({
+                courses_dept: "cpsc",
+                courses_id: "310",
+                courses_uuid: String(1000 + i),
+                courses_pass: 100,
+                courses_fail: 10,
+                courses_audit: 5
+            });
+        }
+
+        const res = scheduler.schedule(secs, rooms);
+        Log.trace(res.filter((p) => {
+            return p[1].courses_id === "310";
+        }));
+    });
+
 });
