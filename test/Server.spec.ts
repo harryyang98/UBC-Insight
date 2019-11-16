@@ -99,7 +99,7 @@ describe("Facade D3", function () {
     it("delete dataset - rooms - 200", () => {
         try {
             return chai.request(SERVER_URL)
-                .del("dataset/myrooms")
+                .del("dataset/myrooms/rooms")
                 .then( (res) => {
                     Log.trace(res);
                     expect(res.status).to.be.equal(200);
@@ -132,7 +132,7 @@ describe("Facade D3", function () {
     it("delete dataset - notFoundError - 404", () => {
         try {
             return chai.request(SERVER_URL)
-                .del("dataset/myrooms")
+                .del("dataset/myrooms/rooms")
                 .then( (res) => {
                     Log.trace(res);
                     expect.fail("should not pass with not found error");
@@ -145,22 +145,56 @@ describe("Facade D3", function () {
         }
     });
 
-    // it("post queue - 200 - courses", () => {
-    //     try {
-    //         return chai.request(SERVER_URL)
-    //             .post("/query")
-    //             .send()
-    //             .then((res) => {
-    //                 Log.trace(res);
-    //                 expect(res.status).to.be.equal(200);
-    //             }).catch((err) => {
-    //                 Log.error(err);
-    //                 expect.fail(err);
-    //             });
-    //     } catch (err) {
-    //         Log.error(err);
-    //         expect.fail(err);
-    //     }
-    // });
+    it("post queue - 200 - courses", () => {
+        try {
+            return chai.request(SERVER_URL)
+                .post("/query/valid query testing post.json")
+                .then((res) => {
+                    Log.trace(res);
+                    expect(res.status).to.be.equal(200);
+                }).catch((err) => {
+                    Log.error(err);
+                    expect.fail(err);
+                });
+        } catch (err) {
+            Log.error(err);
+            expect.fail(err);
+        }
+    });
+
+
+    it("post queue - 400 - courses", () => {
+        try {
+            return chai.request(SERVER_URL)
+                .post("/query/invalid query testing post.json")
+                .then((res) => {
+                    Log.trace(res);
+                    expect.fail("should fail due to invalid query");
+                }).catch((err) => {
+                    Log.error(err);
+                });
+        } catch (err) {
+            Log.error(err);
+            expect.fail(err);
+        }
+    });
+
+
+    it(" get dataset - 200 - courses", () => {
+        try {
+            return chai.request(SERVER_URL)
+                .get("dataset/courses/courses")
+                .then((res) => {
+                    Log.trace(res);
+                    expect(res.status).to.be.equal(200);
+                }).catch((err) => {
+                    Log.error(err);
+                    expect.fail(err);
+                });
+        } catch (err) {
+            Log.error(err);
+            expect.fail(err);
+        }
+    });
     // The other endpoints work similarly. You should be able to find all instructions at the chai-http documentation
 });
