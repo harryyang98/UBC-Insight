@@ -65,13 +65,12 @@ export default class Server {
 
                 // This is an example endpoint that you can invoke by accessing this URL in your browser:
                 // http://localhost:4321/echo/hello
-                that.rest.get("/echo/:msg", Server.echo);
-
-                // NOTE: your endpoints should go here
                 that.rest.put("/dataset/:id/:kind", that.putDataset.bind(that));
                 that.rest.del("/dataset/:id", that.deleteDataset.bind(that));
                 that.rest.post("/query", that.postQuery.bind(that));
                 that.rest.get("/datasets", that.getDatasets.bind(that));
+
+                // NOTE: your endpoints should go here
 
                 // This must be the last endpoint!
                 that.rest.get("/.*", Server.getStatic);
@@ -93,22 +92,6 @@ export default class Server {
                 reject(err);
             }
         });
-    }
-
-    // The next two methods handle the echo service.
-    // These are almost certainly not the best place to put these, but are here for your reference.
-    // By updating the Server.echo function pointer above, these methods can be easily moved.
-    private static echo(req: restify.Request, res: restify.Response, next: restify.Next) {
-        Log.trace("Server::echo(..) - params: " + JSON.stringify(req.params));
-        try {
-            const response = Server.performEcho(req.params.msg);
-            Log.info("Server::echo(..) - responding " + 200);
-            res.json(200, {result: response});
-        } catch (err) {
-            Log.error("Server::echo(..) - responding 400");
-            res.json(400, {error: err});
-        }
-        return next();
     }
 
     private async putDataset(req: restify.Request, res: restify.Response, next: restify.Next) {
@@ -154,14 +137,6 @@ export default class Server {
             res.json(200, { result: sets });
         });
         return next();
-    }
-
-    private static performEcho(msg: string): string {
-        if (typeof msg !== "undefined" && msg !== null) {
-            return `${msg}...${msg}`;
-        } else {
-            return "Message not provided";
-        }
     }
 
     private static getStatic(req: restify.Request, res: restify.Response, next: restify.Next) {

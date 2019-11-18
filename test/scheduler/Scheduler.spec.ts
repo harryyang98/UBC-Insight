@@ -1,7 +1,4 @@
-import {expect} from "chai";
 import Log from "../../src/Util";
-import {ScoreCalculator} from "../../src/scheduler/ScoreCalculator";
-import {TimeTable} from "../../src/scheduler/TimeTable";
 import {IScheduler, SchedSection} from "../../src/scheduler/IScheduler";
 import Scheduler from "../../src/scheduler/Scheduler";
 

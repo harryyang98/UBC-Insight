@@ -19,10 +19,6 @@ export class TimeTable {
         this.setupTimeSlots();
     }
 
-    public addPlan(plan: Plan) {
-        this.plans.push(plan);
-    }
-
     public addPlans(plans: Plan[]) {
         this.plans.push(...plans);
     }
