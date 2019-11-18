@@ -12,6 +12,14 @@ describe("Facade D3", function () {
     let facade: InsightFacade = null;
     let server: Server = null;
     const SERVER_URL: string = "http://localhost:4321/";
+    const query = {
+        WHERE: {
+            GT: {courses_avg: 97}
+        },
+        OPTIONS: {
+            COLUMNS: ["courses_uuid"]
+        }
+    };
 
     chai.use(chaiHttp);
 
@@ -149,6 +157,7 @@ describe("Facade D3", function () {
         try {
             return chai.request(SERVER_URL)
                 .post("query")
+                .send(query)
                 .then((res) => {
                     Log.trace(res);
                     expect(res.status).to.be.equal(200);
