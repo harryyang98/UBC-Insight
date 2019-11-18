@@ -1,3 +1,36 @@
 {
-    "query1":{"WHERE": {"IS": {"courses_dept": "cpsc"} }, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_id"], "ORDER": "courses_id"} }
+    "query1":{"WHERE": {"IS": {"courses_dept": "cpsc"} }, "OPTIONS": {"COLUMNS": ["courses_dept", "courses_id"], "ORDER": "courses_id"} },
+    "query2": {
+        "WHERE": {
+            "AND": [{
+                "IS": {
+                    "rooms_furniture": "*Tables*"
+                }
+            }, {
+                "NOT": {
+                    "GT": {
+                        "rooms_seats": 300
+                    }
+                }
+            }]
+        },
+        "OPTIONS": {
+            "COLUMNS": [
+                "rooms_lon",
+                "rooms_shortname",
+                "maxSeats"
+            ], "ORDER": {
+                "keys": ["rooms_lon","maxSeats"],
+                "dir": "DOWN"
+            }
+        },
+        "TRANSFORMATIONS": {
+            "GROUP": ["rooms_lon","rooms_shortname"],
+            "APPLY": [{
+                "maxSeats": {
+                    "MAX": "rooms_seats"
+                }
+            }]
+        }
+    }
 }
