@@ -1,6 +1,7 @@
 import Log from "../../src/Util";
 import {IScheduler, SchedSection} from "../../src/scheduler/IScheduler";
 import Scheduler from "../../src/scheduler/Scheduler";
+import {TimeTable} from "../../src/scheduler/TimeTable";
 
 
 describe("scheduler", () => {
@@ -82,6 +83,9 @@ describe("scheduler", () => {
 
     before(() => {
         scheduler = new Scheduler();
+
+        const tc = new TimeTable();
+        tc.addPlan(null);
     });
 
     it("show its result as example", () => {

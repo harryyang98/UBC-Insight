@@ -80,9 +80,9 @@ export default class Scheduler implements IScheduler {
                 table.shuffleRoomPlans(room);
 
                 // start to remove the conflicts if impossible
-                if (count ++ > 50) {
+                if (count ++ > 100) {
                     Scheduler.hasConflict(table, room, true);
-                    count = 45;
+                    count = 50;
                 }
             }
         }

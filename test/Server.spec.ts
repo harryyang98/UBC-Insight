@@ -48,6 +48,28 @@ describe("Facade D3", function () {
     const courses = fs.readFileSync("./test/data/courses.zip");
     const rooms = fs.readFileSync("./test/data/rooms.zip");
 
+    it("test echo - 200", () => {
+        return chai.request(SERVER_URL)
+            .get("echo/zhazha")
+            .then((res) => {
+                Log.trace(res);
+                expect(res.status).to.be.equal(200);
+            }).catch((err) => {
+                expect.fail(err);
+            });
+    });
+
+    it("test get static - 200", () => {
+        return chai.request(SERVER_URL)
+            .get("")
+            .then((res) => {
+                Log.trace(res);
+                expect(res.status).to.be.equal(200);
+            }).catch((err) => {
+                expect.fail(err);
+            });
+    });
+
     it("put dataset - 200 - courses", () => {
         try {
             return chai.request(SERVER_URL)
